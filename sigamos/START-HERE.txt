@@ -1,0 +1,22 @@
+SIGAMOS v5
+==========
+Open  intro.html  with Live Server (keep the folders as they are).
+
+intro.html ............. the intro screen, carousel and Ajustes (music player, settings, Developer mode)
+README-NOTES.md ........ notes for the game developer
+
+assets/
+  intro-audio/ ......... music and sounds used by intro.html
+  intro-images/ ........ card photos (incl. card-direction, card-signals, card-settings), hand icons, default music cover
+
+games/
+  kia/ ................. the Kia Soul game (Interior card): Reseña / Examen on photos
+    bridge.js .......... connects it to intro.html (Win all / Lose all, Inicio returns to the carousel)
+  senales/ ............. the Señales game
+    index.html ......... the game itself
+    bridge.js .......... connects the game to intro.html (Universal music, Win all / Lose all)
+    style.css, sprites.js, sounds.js ... game files (untouched)
+    audio/ ............. game sound files
+
+To add a song: drop the mp3 into assets/music/ . That's it, it appears in Ajustes > Biblioteca.
+(See assets/music/PUT-MUSIC-HERE.txt. If a host shows no folder listing, run update-music.bat / .command once.)

@@ -1,0 +1,181 @@
+/* KIA SOUL 2015 flashcards — styles
+   Sections: base · home · viewer · popups · exam feedback · countdown */
+
+/* ===== base ===== */
+:root{--pink:#ff86aa;--hot:#ff5f80;--yellow:#ffd94f;--ink:#40333a;--shadow:0 18px 40px rgba(130,55,85,.16)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:'Baloo 2',system-ui,sans-serif;color:var(--ink);background:#fff7fb}
+body.cam{overflow:hidden;background:#000}
+button{font:inherit;cursor:pointer;border:0}
+
+.yellow-btn{background:var(--yellow);color:#4e3f25;border-radius:17px;padding:11px 18px;font-weight:900;box-shadow:0 7px 16px rgba(255,217,79,.25)}
+.secondary-btn{background:#fff;border:2px solid #ffd2df;border-radius:18px;padding:12px 18px;color:#db5b7c;font-weight:800;box-shadow:0 8px 20px rgba(130,55,85,.08)}
+.progress-pill{background:#fff;border:2px solid #ffd2df;border-radius:999px;padding:5px 13px;font-weight:800;color:#d75578}
+.hearts{color:#ff5579;letter-spacing:2px;font-size:1.2rem}
+.mini-tag,.question-small{font-size:.72rem;letter-spacing:1px;color:#a27c89;font-weight:900}
+
+/* ===== home: blank page, two buttons ===== */
+.home{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px}
+.big-btn{width:min(320px,80vw);padding:20px 24px;border-radius:26px;font-size:1.7rem;font-weight:900;box-shadow:var(--shadow);transition:transform .15s}
+.big-btn:hover{transform:translateY(-3px)}
+.big-btn.review{background:var(--yellow);color:#4e3f25}
+.big-btn.exam{background:var(--hot);color:#fff}
+
+/* ===== full-screen look-around viewer ===== */
+.viewer{position:fixed;inset:0;overflow:hidden;background:#000;z-index:1;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-tap-highlight-color:transparent}
+.viewer:active{cursor:grabbing}
+.world{position:absolute;left:0;top:0;will-change:transform}
+/* the world = blurred extension (.pad) with the sharp 800x600-shaped photo (.photo) centred on top.
+   masks live inside .photo, so they always line up with the photo */
+.pad{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.photo{position:absolute}
+.photo .base{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;-webkit-user-drag:none;
+  /* fade only the photo's outer edge into the blurred extension */
+  -webkit-mask-image:linear-gradient(to right,transparent,#000 var(--feather),#000 calc(100% - var(--feather)),transparent),linear-gradient(to bottom,transparent,#000 var(--feather),#000 calc(100% - var(--feather)),transparent);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(to right,transparent,#000 var(--feather),#000 calc(100% - var(--feather)),transparent),linear-gradient(to bottom,transparent,#000 var(--feather),#000 calc(100% - var(--feather)),transparent);
+  mask-composite:intersect}
+
+/* peripheral blur + vignette: sharp in the middle, soft toward the edges */
+.fov{position:absolute;inset:0;pointer-events:none;z-index:6;-webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);
+  -webkit-mask-image:radial-gradient(ellipse 68% 62% at 50% 50%,transparent 52%,#000 100%);mask-image:radial-gradient(ellipse 68% 62% at 50% 50%,transparent 52%,#000 100%)}
+.fov-dark{position:absolute;inset:0;pointer-events:none;z-index:7;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 60%,rgba(0,0,0,.38) 100%)}
+
+/* 50% transparent yellow part highlights (png masks, or a plain box when a part has no mask yet) */
+.hl-img,.hl-box{position:absolute;pointer-events:none;opacity:0;transition:opacity .2s;z-index:2}
+.hl-img{inset:0;width:100%;height:100%;object-fit:fill;user-select:none;-webkit-user-drag:none}
+.hl-box{background:#ffd94f;border-radius:8px}
+.hl-img.on,.hl-box.on{opacity:.5}
+.hl-img.focus,.hl-box.focus{opacity:.78}
+
+.hud{position:absolute;left:14px;top:calc(14px + env(safe-area-inset-top));z-index:9;max-width:calc(100vw - 90px);background:rgba(13,25,38,.7);color:#fff;border-radius:999px;padding:6px 14px;font-weight:800;font-size:.95rem;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud:empty{display:none}
+.hud .h{color:#ff6e91;letter-spacing:1px}
+.look-hint{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9;background:rgba(13,25,38,.72);color:#fff;border-radius:999px;padding:6px 14px;font-size:.85rem;font-weight:700;pointer-events:none;transition:opacity .5s;white-space:nowrap}
+.look-hint.gone{opacity:0}
+.look-hint.above{bottom:calc(88px + env(safe-area-inset-bottom))}   /* lifted when the ¿Sigamos? button is showing */
+.sel-pill{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(112px + env(safe-area-inset-bottom));z-index:10;background:#ffd94f;color:#4e3f25;font-weight:900;border-radius:999px;padding:7px 16px;font-size:.95rem;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+.sel-pill.on{opacity:1}
+
+.fab{position:fixed;z-index:30;right:max(14px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.88);color:#7a6570;font-size:1.4rem;font-weight:900;box-shadow:0 6px 18px rgba(0,0,0,.35);-webkit-tap-highlight-color:transparent}
+.next-btn{position:fixed;z-index:30;left:50%;transform:translateX(-50%);bottom:calc(22px + env(safe-area-inset-bottom));padding:14px 30px;border-radius:999px;font-size:1.25rem;box-shadow:0 10px 26px rgba(0,0,0,.35)}
+
+/* ===== popups (menu, "find this part", explanations, mistakes, results) ===== */
+.explain-overlay{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:18px}
+.explain-overlay.sheet{place-items:end center;padding:0 14px calc(22px + env(safe-area-inset-bottom))}
+.cloud-backdrop{position:absolute;inset:0;background:rgba(20,25,35,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sheet .cloud-backdrop{background:rgba(29,35,45,.22);-webkit-backdrop-filter:none;backdrop-filter:none}
+
+.pop-card{position:relative;width:min(420px,92vw);background:#fff;border-radius:30px;padding:22px 20px;box-shadow:0 22px 55px rgba(20,25,35,.4);text-align:center;animation:pop .26s ease;max-height:86vh;overflow:auto}
+.pop-card h2{margin:2px 0 4px;color:#ef5f86;font-size:1.8rem}
+.pop-card p{margin:0 0 12px;color:#8d7680}
+.pop-col{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.pop-col .secondary-btn,.pop-col .yellow-btn{width:100%}
+.pop-stat{display:flex;justify-content:center;gap:10px;align-items:center;margin-bottom:6px}
+.pop-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;text-align:left}
+.result-score{font-size:3.6rem;font-weight:900;color:#42aee8}
+
+.cloud-card{--dudu:132px;--dover:36px;position:relative;width:min(380px,92vw);margin-top:calc(var(--dudu) - var(--dover));animation:pop .28s ease}
+/* Bedu stands on a small comment cloud: head and body above its edge, feet overlapping it (he is in front of the cloud) */
+.cloud-card .gif-face{position:absolute;z-index:2;left:50%;top:calc(var(--dover) - var(--dudu));transform:translateX(-50%);width:var(--dudu);height:var(--dudu)}
+.cloud-body{position:relative;z-index:1;background:#fff;border-radius:34px 40px 38px 42px;padding:calc(var(--dover) + 12px) 20px 16px;text-align:center;filter:drop-shadow(0 14px 22px rgba(130,55,85,.2))}
+.cloud-body:before,.cloud-body:after{content:'';position:absolute;background:#fff;border-radius:50%}
+.cloud-body:before{left:24px;top:-16px;width:50px;height:50px}
+.cloud-body:after{right:28px;top:-10px;width:38px;height:38px}
+.cloud-body h2{margin:0;color:#ef5f86;font-size:1.65rem}
+.cloud-body p{font-size:1.05rem;line-height:1.25;margin:5px 0 12px}
+
+.mistake-card{background:#fff;border:2px solid #ffdce6;border-radius:18px;padding:12px;text-align:left;box-shadow:0 9px 22px rgba(100,50,70,.08)}
+.mistake-icon{font-size:1.8rem;display:block}
+.mistake-name{display:block;font-weight:900;font-size:.95rem;color:#ef5f86}
+.mistake-card small{color:#a1808b}
+
+/* ===== exam feedback: try-again bubble, praise word, heart burst ===== */
+.feedback{position:fixed;inset:0;z-index:120;display:grid;place-items:center;pointer-events:none}
+.bubble{background:#fff;border:4px solid #ff9ab2;color:#ef5f86;border-radius:30px;padding:16px 28px;box-shadow:var(--shadow);font-size:2rem;font-weight:900;text-align:center;animation:pop .25s ease}
+.bubble small{display:block;font-size:1rem;color:#8d7680;margin-top:-4px}
+
+.praise{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%) rotate(-5deg);font-family:"Luckiest Guy",cursive;font-size:clamp(2.5rem,10vw,5rem);color:#fff8ec;
+  text-shadow:3px 4px 0 #ff8a6b,5px 6px 0 #ff5f5f,7px 8px 12px rgba(0,0,0,.15);-webkit-text-stroke:2px #ff5f5f;z-index:140;pointer-events:none;white-space:nowrap;animation:praiseIn .7s both}
+.burst{position:fixed;inset:0;pointer-events:none;z-index:150;overflow:hidden}
+.particle{position:absolute;font-size:25px;animation:particlePop 1s ease-out forwards}
+
+
+@keyframes pop{from{transform:scale(.82) translateY(20px);opacity:0}to{transform:none;opacity:1}}
+@keyframes praiseIn{0%{opacity:0;transform:translate(-50%,-20%) scale(.4) rotate(-15deg)}70%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(-4deg)}100%{transform:translate(-50%,-50%) scale(1)}}
+@keyframes particlePop{0%{transform:translate(0,0) scale(.2);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(1.2);opacity:0}}
+
+@media(max-width:680px){
+  .cloud-card{--dudu:108px;--dover:30px}
+  .cloud-body h2{font-size:1.4rem}
+  .bubble{font-size:1.55rem}
+}
+
+/* ===== zoom slider (menu) ===== */
+.zoom-row{margin:8px 0 6px;padding:10px 14px 8px;background:#fff6f9;border:2px solid #ffd2df;border-radius:18px;text-align:left}
+.zoom-title{display:block;font-weight:900;color:#db5b7c;font-size:.95rem;margin-bottom:4px}
+.zoom-slider{width:100%;margin:4px 0;accent-color:#ef5f86;height:28px;cursor:pointer;touch-action:pan-x}
+.zoom-ends{display:flex;justify-content:space-between;font-size:.78rem;font-weight:800;color:#b58a98}
+
+/* ===== shimmer: every highlight on the photo flashes once (rippling left → right); the JS adds .flash to the viewer ===== */
+.hl-img.on,.hl-box.on{--rest:.5}
+.hl-img.focus,.hl-box.focus{--rest:.78}
+@keyframes hlFlash{0%{opacity:var(--rest,0)}45%{opacity:.95}100%{opacity:var(--rest,0)}}
+.viewer.flash .hl-img,.viewer.flash .hl-box{animation:hlFlash 1.3s ease-in-out var(--sd,0s) both}
+@media (prefers-reduced-motion:reduce){.viewer.flash .hl-img,.viewer.flash .hl-box{animation:none}}
+
+/* ===== Dudu GIF in the explanation sheet (replaces the cloud) ===== */
+.gif-face{pointer-events:none}
+.gif-face img{display:block;width:100%;height:100%;object-fit:contain;background:none}
+.dudu-fallback{display:grid;place-items:center;width:100%;height:100%;font-size:3.4rem}
+.viewer{-webkit-touch-callout:none}
+
+/* ===== 3, 2, 1, GO! intro (copied from Sigamos) ===== */
+.intro-scrim{position:fixed;inset:0;z-index:90;background:rgba(255,140,156,.5);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;animation:scrimIn .5s ease both}
+.intro-scrim.out{animation:scrimOut .45s ease forwards;pointer-events:none}
+@keyframes scrimOut{to{opacity:0}}
+.fnf-word{
+  position:relative;font-family:"Luckiest Guy","Baloo 2",cursive;text-transform:uppercase;letter-spacing:.02em;line-height:1;
+  font-size:clamp(2rem,10.4vw,5.6rem);text-align:center;padding:0 10px;white-space:nowrap;
+  animation:fnfPop .9s cubic-bezier(.2,1.4,.4,1) both;
+}
+.fnf-word b{display:block;font-weight:400}
+/* thick black comic outline on a copy of the text BEHIND the colored fill */
+.fnf-word .fo{position:absolute;left:0;right:0;top:0;-webkit-text-stroke:.2em #141414;color:#141414;text-shadow:.05em .09em 0 #141414}
+.fnf-word .ff{position:relative;-webkit-background-clip:text;background-clip:text;color:transparent}
+.fnf-word.ready{transform:rotate(-4deg)}
+.fnf-word.ready .ff{background-image:linear-gradient(90deg,#ff1f1f 0%,#ff2a1a 55%,#ff9a00 100%)}
+.fnf-word.set{transform:rotate(2deg)}
+.fnf-word.set .ff{background-image:linear-gradient(90deg,#fff07a 0%,#ffe13a 50%,#ffb800 100%)}
+.fnf-word.go{font-size:clamp(4rem,22vw,10rem);transform:rotate(-3deg)}
+.fnf-word.go .ff{background-image:linear-gradient(180deg,#3dff3d,#0fd10f)}
+@keyframes fnfPop{
+  0%{opacity:0;scale:.2;translate:0 30px}
+  55%{opacity:1;scale:1.16;translate:0 -6px}
+  75%{scale:.96}
+  100%{opacity:1;scale:1;translate:0 0}
+}
+@keyframes scrimIn{from{opacity:0}to{opacity:1}}
+
+/* ===== Examen identification card: white, red / yellow / blue border (cycles each question) ===== */
+.q-card{--qc:#ff4757;position:fixed;z-index:35;left:50%;bottom:calc(26vh + env(safe-area-inset-bottom));width:min(260px,70vw);
+  background:#fff;border:6px solid var(--qc);border-radius:26px;padding:26px 18px;text-align:center; 
+  box-shadow:0 14px 34px rgba(30,20,40,.28);pointer-events:none;-webkit-user-select:none;user-select:none;
+  transform:translate(-50%,0);opacity:1;animation:qUp 1.2s cubic-bezier(.2,.8,.25,1) both;
+  transition:bottom .8s cubic-bezier(.6,0,.3,1),width .8s cubic-bezier(.6,0,.3,1),padding .8s ease,border-width .8s ease,border-radius .8s ease,opacity .5s ease, min-height .8s ease}
+  min-height:min(340px,48vh); display:flex;flex-direction:column;justify-content:center;
+.q-card *{pointer-events:none}
+.q-card.c0{--qc:#ff4757}
+.q-card.c1{--qc:#ffcb2e}
+.q-card.c2{--qc:#3db5ff}
+@keyframes qUp{from{transform:translate(-50%,calc(100% + 30vh))}to{transform:translate(-50%,0)}}
+.q-tag{font-size:.72rem;letter-spacing:1px;font-weight:900;color:#a27c89;max-height:1.4rem;overflow:hidden;transition:max-height .8s ease,opacity .5s ease}
+.q-name{font-size:1.9rem;line-height:1.05;font-weight:900;color:#3c2e36;margin:4px 0 6px;transition:font-size .8s ease,margin .8s ease}
+.q-help{font-size:.9rem;line-height:1.25;color:#8d7680;max-height:6rem;overflow:hidden;transition:max-height .8s ease,opacity .5s ease,margin .8s ease}
+/* minimised: only the part's name, where the "Arrastra para mirar" hint used to be */
+.q-card.min{bottom:calc(30px + env(safe-area-inset-bottom));width:min(250px,72vw);padding:6px 14px 8px;border-width:4px;border-radius:18px;min-height:0;}
+.q-card.min .q-tag,.q-card.min .q-help{max-height:0;opacity:0;margin:0}
+.q-card.min .q-name{font-size:1.15rem;margin:0}
+.q-card.dim{opacity:.5}      /* 1 s after minimising */
+.q-card.drag{opacity:.2}     /* while the photo is being dragged */

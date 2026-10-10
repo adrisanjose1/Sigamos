@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sigamos – intro (mock visual)</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pink:#ff86aa; --hot:#ff5f80; --red:#ff3e48; --yellow:#ffd94f; --blue:#42b6ff;
+  --green:#4cd97b; --violet:#b38bff;
+  --ink:#40333a; --paper:#fffdfd;
+  --pick:#36aff2;
+  /* LOGO FONT: change ONLY this line to match the game (see note) */
+  --logo-font:"Baloo 2",system-ui,sans-serif;
+  --shadow:0 18px 40px rgba(130,55,85,.16);
+  --gate:rgba(255,140,156,.55);           /* same tint as the game's wrong-answer dim */
+}
+*{box-sizing:border-box}
+
+/* ===== page background: exact hearts wallpaper from the game ===== */
+body{
+  margin:0; color:var(--ink); font-family:"Baloo 2",system-ui,sans-serif;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(6.3,8.4) scale(0.4)'/%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(51.3,53.4) scale(0.4)'/%3E%3C/svg%3E");
+  background-size:110px 110px;
+  background-repeat:repeat;
+}
+html,body{height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
+:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* =====================================================================
+   PINK GATE — the same dim used for a wrong Examen answer. Purely a
+   visual tint (pointer-events:none) so it never blocks the swipe that's
+   needed to clear it. On for: the boot screen, and again once the
+   carousel is ready until the first swipe/tap.
+   ===================================================================== */
+.pinkgate{position:fixed;inset:0;z-index:8;background:var(--gate);opacity:0;pointer-events:none;transition:opacity .6s ease}
+.pinkgate.on{opacity:1}
+
+/* ===== logo (same look as the game's .fan-title, sized in em so it scales cleanly) ===== */
+.logo,.hlogo{
+  /* Font A — the approved Sigamos logo treatment */
+  text-transform: uppercase;
+  font-family: "Luckiest Guy", cursive;font-weight:800;color:#fff;line-height:1;white-space:nowrap;
+  -webkit-text-stroke:.035em #ff5f5f;
+  paint-order: stroke fill;
+  text-shadow:.035em .046em 0 #ff8a6b,.07em .08em 0 #ff5f5f;
+}
+.logo{position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:clamp(3rem,15vw,5.4rem);opacity:0;transition:opacity 3s ease}.intro.show .logo{opacity:1}
+.intro.logo-out .logo{opacity:0;transition-duration:.6s}
+
+/* ===== ray / streak sunburst behind the 3 cards when they pop ===== */
+.rays{
+  position:fixed;left:50%;top:50%;z-index:4;width:min(160vw,1100px);height:min(160vw,1100px);
+  translate:-50% -50%;pointer-events:none;opacity:0;scale:.55;
+  transition:opacity .5s ease,scale .5s cubic-bezier(.2,1.3,.3,1);
+  background:repeating-conic-gradient(rgba(255,255,255,.9) 0deg 5deg,transparent 5deg 24deg);
+  -webkit-mask-image:radial-gradient(circle,#000 26%,transparent 68%);mask-image:radial-gradient(circle,#000 26%,transparent 68%);
+  animation:raySpin 16s linear infinite;
+}
+.rays.on{opacity:.85;scale:1}
+@keyframes raySpin{to{transform:rotate(360deg)}}
+
+/* ===== dark pink boot screen: icon only, no text ===== */
+.boot{
+  position:fixed;inset:0;z-index:9;width:100%;display:flex;align-items:center;justify-content:center;
+  transition:opacity .5s ease;
+}
+.boot.go{opacity:0;pointer-events:none}
+.boot-ring{position:relative;width:132px;height:132px;display:flex;align-items:center;justify-content:center}
+.boot-ring::before,.boot-ring::after{
+  content:"";position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,255,255,.85);
+  animation:ringPulse 1.9s ease-out infinite;
+}
+.boot-ring::after{animation-delay:.6s}
+@keyframes ringPulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.35);opacity:0}}
+.hand{display:block;width:96px;height:96px;object-fit:contain;
+  }
+.boot .hand{animation:handTap 1.3s ease-in-out infinite}
+@keyframes handTap{0%,100%{transform:scale(1)}50%{transform:scale(.88)}}
+
+/* ===== intro group: 3 colour cards + logo (fixed, centred) ===== */
+.intro{position:fixed;left:50%;top:50%;width:300px;height:300px;z-index:10;pointer-events:none;transform:translate(-50%,-50%)}.fc{position:absolute;left:50%;top:50%;width:104px;height:146px;margin:-73px 0 0 -52px;border:6px solid;border-radius:20px;
+  box-shadow:0 12px 24px rgba(130,55,85,.3);opacity:0;transform:translateY(50px) scale(.25) rotate(0deg);
+  transition:opacity .5s ease,transform .68s cubic-bezier(.22,1.55,.36,1);
+}
+.intro.cardspop .fc{opacity:1;transform:var(--fanpos)}
+.fc.b{background:#8bd2ff;border-color:#36aff2;--fanpos:translateX(-46px) rotate(-13deg) scale(1.15)}
+.fc.y{background:#fff0ad;border-color:#ffd743;--fanpos:translateX(0) rotate(0deg) scale(1.15)}
+.fc.r{background:#ff8c9c;border-color:#ff3d49;--fanpos:translateX(46px) rotate(13deg) scale(1.15)}
+
+.burst{position:fixed;left:50%;top:50%;z-index:6;pointer-events:none}
+.burst span{position:absolute;left:0;top:0;display:block;line-height:0}
+.burst svg{display:block;width:100%;height:100%}
+
+/* ===== stage: header logo, carousel, hint / buttons ===== */
+.stage{
+  position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;align-items:center;
+  padding:calc(env(safe-area-inset-top,0px) + 2.2dvh) 0 0;
+  transition:transform .9s cubic-bezier(.3,.8,.3,1)
+}
+.stage.scrolled{transform:translateY(-8dvh)}
+.stage.down{transform:translateY(120dvh);transition:transform .75s ease-in}
+.hlogo {
+  position: absolute;
+  left: 50%;
+  z-index: 3;
+  visibility: hidden;
+  font-size: clamp(3rem, 13vw, 4.5rem);
+  padding: .1em .25em .2em;
+  white-space: nowrap;
+}
+.hlogo.on {
+  visibility: visible;
+}
+.rail{position:absolute;inset:0;z-index:1;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.pc{
+  position:absolute;left:0;top:0;margin:0;transform-origin:0 0;visibility:hidden;
+  border:8px solid var(--c);border-radius:24px;overflow:hidden;background-color:var(--c);background-position:center;background-size:cover;
+  box-shadow:0 12px 26px rgba(130,55,85,.3);will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  transition:box-shadow .4s ease
+}
+.pc.cur{box-shadow:0 0 0 5px #fff,0 0 30px var(--c),0 16px 32px rgba(130,55,85,.35)}
+.pc figcaption{pointer-events:none}
+/* roulette wheel: sits under the cards, the cards orbit its centre, the rotor turns with them */
+.wheel{position:absolute;z-index:0;left:50%;top:var(--wy);width:var(--wd);height:var(--wd);margin:calc(var(--wd)/-2) 0 0 calc(var(--wd)/-2);
+  pointer-events:none;filter:drop-shadow(0 10px 14px rgba(20,20,35,.3));translate:0 130%;transition:translate 1.2s cubic-bezier(.2,.8,.2,1)}
+.wheel.on{translate:0 0}
+.wheel svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.rotor{will-change:transform}
+.pc figcaption{position:absolute;left:0;right:0;bottom:0;padding:26px 8px 9px;text-align:center;color:#fff;line-height:1.05;
+  background:linear-gradient(transparent,rgba(48,18,36,.8))}
+.pc b{display:block;font-size:1.35rem;font-weight:800}
+.pc small{font-size:.8rem;font-weight:600;opacity:.94}
+.pc.placeholder{display:flex;align-items:center;justify-content:center}
+.pc.placeholder svg{width:44%;height:44%;opacity:.92}
+
+.dock{position:absolute;z-index:4;left:0;right:0;top:var(--dockY);height:92px}
+.hint,.modes{position:absolute;left:50%;top:50%;translate:-50% -50%}
+.hint{position:fixed;top:var(--dockY);z-index:9;}
+.hint{
+  display:flex;align-items:center;justify-content:center;padding:10px;
+    opacity:0;pointer-events:none;transition:opacity .5s
+}
+.hint.on{opacity:1}
+.hint .hand{width:56px;height:56px;animation:sway 1.7s ease-in-out infinite}
+.hint::before,.hint::after{
+  content:"";position:absolute;top:60%;width:38px;height:3px;border-radius:3px;opacity:0;pointer-events:none;
+  animation:swish 1.7s ease-in-out infinite;
+}
+.hint::before{left:calc(50% - 52px);background:linear-gradient(90deg,transparent,#fff);animation-name:swishR}
+.hint::after{left:calc(50% + 14px);background:linear-gradient(270deg,transparent,#fff);animation-name:swishL}
+@keyframes swishR{0%{transform:translateX(-10px) scaleX(.3);opacity:0}20%{opacity:1}50%{transform:translateX(16px) scaleX(1);opacity:0}100%{opacity:0}}
+@keyframes swishL{0%,50%{transform:translateX(10px) scaleX(.3);opacity:0}70%{opacity:1}100%{transform:translateX(-16px) scaleX(1);opacity:0}}
+@keyframes sway{0%,100%{transform:translateX(-7px)}50%{transform:translateX(7px)}}
+
+/* Reseña / Examen: fade only, no slide — they stay put once shown. */
+.modes{display:flex;gap:10px;opacity:0;pointer-events:none;transition:opacity .5s .1s}
+.modes.on{opacity:1;pointer-events:auto}
+.mode{min-width:104px;padding:6px 18px;border-radius:999px;background:#fff;border:4px solid var(--pick);color:var(--ink);
+  font-size:1.1rem;font-weight:800;line-height:1.2;box-shadow:0 8px 18px rgba(130,55,85,.14);transition:transform .15s,border-color .3s}
+.set-btn{display:none}
+.modes.set .mode{display:none}.modes.set .set-btn{display:block}
+.mode:active{transform:scale(.95)}
+
+/* ===== placeholder screens (the real game replaces these) ===== */
+.screen{position:fixed;inset:0;z-index:7;display:none;flex-direction:column;align-items:center;gap:8px;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 14px 0;opacity:0;transition:opacity .35s}
+.screen.on{display:flex}.screen.vis{opacity:1}
+.back{align-self:flex-start;padding:8px 18px;border-radius:999px;background:#fff;font-weight:800;color:#d75578;box-shadow:0 6px 14px rgba(130,55,85,.15)}
+.screen h2{margin:0;font-size:1.9rem;font-weight:800;line-height:1;text-align:center}
+.screen h2 small{display:block;font-size:1rem;color:#c43d68;font-weight:600}
+.screen img{max-width:min(94vw,520px);max-height:50dvh;border:6px solid var(--pick);border-radius:24px;object-fit:cover;box-shadow:var(--shadow)}
+.screen p{margin:0;color:#8d7680;text-align:center}
+/* ===== game layer: a real game runs isolated inside an iframe ===== */
+.gamelayer{position:fixed;inset:0;z-index:30;display:none;opacity:0;transition:opacity .35s;background:#fff}
+.gamelayer.on{display:block}.gamelayer.vis{opacity:1}
+.gamelayer iframe{display:block;width:100%;height:100%;border:0}
+.replay{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:10px;z-index:20;width:40px;height:40px;border-radius:50%;
+  background:#fff;color:#d75578;font-size:1.3rem;box-shadow:0 4px 10px rgba(130,55,85,.2)}
+
+
+/* ===== Ajustes screen (inside the intro, no separate page) ===== */
+.sset{overflow-y:auto;align-items:stretch;padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.sset .bar{display:flex;align-items:center;gap:12px;padding-right:48px}
+.sset .bar h2{font-size:1.7rem}
+.sw{width:100%;max-width:440px;margin:auto;display:flex;flex-direction:column;gap:14px}   /* auto margins: centred both ways, falls back to top + scroll when taller than the screen */
+.deck{position:relative;width:min(80vw,380px);aspect-ratio:1;margin:0 auto;border:7px solid var(--red);border-radius:28px;
+  background:linear-gradient(160deg,#ff9aa8,#ff6f82);box-shadow:var(--shadow)}
+.disc{position:absolute;left:5%;top:15%;width:80%;aspect-ratio:1;border-radius:50%;
+  background:
+    conic-gradient(from 0deg,transparent 0 35deg,rgba(255,255,255,.16) 50deg,transparent 65deg 215deg,rgba(255,255,255,.16) 230deg,transparent 245deg),
+    repeating-radial-gradient(circle,#15131a 0 2px,#23202a 2px 4px);
+  border:3px solid #0c0b10;animation:discSpin 3.4s linear infinite;animation-play-state:paused}
+.sset.playing .disc{animation-play-state:running}
+@keyframes discSpin{to{transform:rotate(360deg)}}
+.disc .lbl{position:absolute;inset:31%;border-radius:50%;background:var(--ink) center/cover no-repeat;border:3px solid #0c0b10}
+.disc .lbl::after{content:"";position:absolute;left:50%;top:50%;width:13%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;background:#fff;border:2px solid #0c0b10}
+.arm{position:absolute;left:88%;top:10%;width:10px;margin-left:-5px;height:62%;transform-origin:50% 8px;transform:rotate(-4deg);
+  transition:transform .9s cubic-bezier(.3,.8,.3,1);border-radius:6px;background:#f6eef0;border:2px solid var(--ink)}
+.arm::before{content:"";position:absolute;left:50%;top:-14px;width:30px;height:30px;translate:-50% 0;border-radius:50%;background:#f6eef0;border:3px solid var(--ink)}
+.arm::after{content:"";position:absolute;left:50%;bottom:-16px;width:18px;height:26px;translate:-50% 0;border-radius:5px;background:var(--ink)}
+.sset.playing .arm{transform:rotate(14deg)}
+.trk{text-align:center;line-height:1.05}.trk b{display:block;font-size:1.6rem;font-weight:800}.trk small{color:#8d7680;font-weight:600;font-size:1rem}
+.seek{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:700;color:#8d7680}
+.sset input[type=range]{accent-color:var(--red);width:100%;height:24px;margin:0}
+.ctl{display:flex;align-items:center;justify-content:center;gap:16px}
+.ctl button{width:48px;height:48px;border-radius:50%;background:#fff;border:4px solid var(--red);display:grid;place-items:center}
+.ctl button svg{width:22px;height:22px;fill:var(--ink)}
+.ctl .pp{width:64px;height:64px;background:var(--red)}.ctl .pp svg{fill:#fff;width:28px;height:28px}
+.ctl .more{opacity:.4;cursor:not-allowed;border-color:#d9cdd1}
+.pp .ic-pause{display:none}.sset.playing .pp .ic-pause{display:block}.sset.playing .pp .ic-play{display:none}
+.lib{position:relative}
+.lib>button{width:100%;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:18px;background:#fff;border:4px solid #ffd2df;font-weight:800;font-size:1.05rem;text-align:left}
+.lib>button span{flex:1}.lib>button i{font-style:normal;transition:transform .2s}.lib.open>button i{transform:rotate(180deg)}
+.lib .th{width:34px;height:34px;border-radius:8px;background:var(--ink) center/cover;flex:none}
+.lib ul{list-style:none;margin:6px 0 0;padding:6px;display:none;flex-direction:column;gap:4px;border-radius:18px;background:#fff;border:4px solid #ffd2df;max-height:220px;overflow:auto}
+.lib.open ul{display:flex}
+.lib li button{width:100%;display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:12px;text-align:left;font-weight:700}
+.lib li button small{display:block;color:#8d7680;font-weight:600;font-size:.8rem;line-height:1}
+.lib li.on button{background:#ffe3ea}
+.vol{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:18px;background:#fff;border:4px solid #ffd2df;font-weight:800}
+.vol label{min-width:74px}.vol output{min-width:38px;text-align:right;color:#8d7680;font-size:.9rem}
+/* shuffle, play next / queue, option switches */
+.ctl .shuf.on{background:var(--red)}.ctl .shuf.on svg{fill:#fff}
+.lib li{display:flex;align-items:center;gap:4px}
+.lib li .pick{flex:1;min-width:0}
+.lib li .qa{flex:none;width:auto;padding:6px 10px;border-radius:999px;background:#fff0f4;border:2px solid #ffd2df;font-size:.78rem;font-weight:800;color:#d75578}
+.lib li .qa:active{transform:scale(.95)}
+.queue{padding:8px 14px 10px;border-radius:18px;background:#fff;border:4px solid #ffd2df;font-weight:700}
+.queue[hidden]{display:none}
+.queue .qh{display:flex;align-items:center;justify-content:space-between;font-weight:800}
+.queue .qh button{font-size:.8rem;font-weight:800;color:#d75578;padding:2px 12px;border-radius:999px;background:#ffe3ea}
+.queue ol{margin:6px 0 0;padding-left:22px}
+.queue li{padding:2px 0}.queue li .qx{float:right;color:#d75578;font-weight:800;padding:0 6px}
+.opt{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:18px;background:#fff;border:4px solid #ffd2df;font-weight:800}
+.opt label{flex:1;line-height:1.1}.opt label small{display:block;color:#8d7680;font-weight:600;font-size:.8rem;margin-top:2px}
+.tg{appearance:none;-webkit-appearance:none;flex:none;width:54px;height:32px;margin:0;border-radius:99px;background:#e6d5da;position:relative;cursor:pointer;transition:background .2s}
+.tg::after{content:"";position:absolute;left:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);transition:transform .2s}
+.tg:checked{background:var(--red)}.tg:checked::after{transform:translateX(22px)}
+/* floating Developer box (above every screen, including the game) */
+.devbox{position:fixed;z-index:40;right:10px;top:calc(64px + env(safe-area-inset-top,0px));width:120px;display:none;flex-direction:column;border-radius:16px;background:#fff;border:4px solid #40333a;box-shadow:0 8px 20px rgba(0,0,0,.28);overflow:hidden;font-weight:800}
+.devbox.on{display:flex}
+.devbox .dh{padding:5px 8px;background:#40333a;color:#fff;font-size:.72rem;letter-spacing:.08em;text-align:center;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.devbox button{padding:10px 6px;font-size:.95rem;border-top:2px solid #f0e3e7;background:#fff;color:#40333a}
+.devbox button[aria-pressed=true]{color:#fff}
+.devbox .dw[aria-pressed=true]{background:#2f9d62}.devbox .dl[aria-pressed=true]{background:#d93a45}
+@media (prefers-reduced-motion:reduce){.disc{animation:none}.hint .hand,.boot .hand,.rays,.hint::before,.hint::after{animation:none}}
+
+@media (max-width:600px){
+  .hlogo{
+    font-size:clamp(3rem,18vw,4.5rem);
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div class="pinkgate on" id="gate" aria-hidden="true"></div>
+
+<main class="stage" id="stage">
+  <div class="wheel" id="wheel" aria-hidden="true">
+    <svg viewBox="0 0 400 400"><defs>
+      <radialGradient id="wood"><stop offset="0" stop-color="#f0d9a6"/><stop offset=".7" stop-color="#dcb878"/><stop offset="1" stop-color="#a97d45"/></radialGradient>
+      <radialGradient id="bowl"><stop offset="0" stop-color="#3f6684"/><stop offset="1" stop-color="#1c3c58"/></radialGradient></defs>
+      <circle cx="200" cy="200" r="197" fill="url(#wood)" stroke="#40333a" stroke-width="6"/>
+      <circle cx="200" cy="200" r="178" fill="#2a4a68" stroke="#40333a" stroke-width="4"/>
+      <circle cx="200" cy="200" r="170" fill="#3a5f80" stroke="#e3c78b" stroke-width="3"/>
+      <g fill="#f4dfb0" stroke="#40333a" stroke-width="2" stroke-linejoin="round" id="diamonds"></g></svg>
+    <svg class="rotor" id="rotor" viewBox="0 0 400 400">
+      <g id="pockets"></g>
+      <circle cx="200" cy="200" r="112" fill="#33597a" stroke="#40333a" stroke-width="4"/>
+      <circle cx="200" cy="200" r="86" fill="#264a69" stroke="#e3c78b" stroke-width="4"/>
+      <circle cx="200" cy="200" r="62" fill="url(#wood)" stroke="#40333a" stroke-width="4"/>
+      <g stroke-linecap="round" fill="none"><path d="M200 200V118M200 200V282M200 200H118M200 200H282" stroke="#40333a" stroke-width="13"/><path d="M200 200V118M200 200V282M200 200H118M200 200H282" stroke="#e8c877" stroke-width="7"/></g>
+      <g fill="#e8c877" stroke="#40333a" stroke-width="3"><circle cx="200" cy="112" r="11"/><circle cx="200" cy="288" r="11"/><circle cx="112" cy="200" r="11"/><circle cx="288" cy="200" r="11"/></g>
+      <circle cx="200" cy="200" r="24" fill="#e8c877" stroke="#40333a" stroke-width="4"/><circle cx="200" cy="200" r="11" fill="#f7e6b4" stroke="#40333a" stroke-width="3"/></svg>
+  </div>
+  <div class="hlogo" id="hlogo" aria-label="Sigamos">Sigamos</div>
+  <section class="rail" id="rail" aria-label="Elige una sección"></section>
+  <div class="dock">
+    
+    <div class="modes" id="modes">
+      <button class="mode" data-m="Reseña">Reseña</button>
+      <button class="mode" data-m="Examen">Examen</button>
+      <button class="mode set-btn" id="setBtn">Ajustes</button>
+    </div>
+  </div>
+</main>
+<div class="hint" id="hint" aria-label="Desliza para ver más"><img class="hand" src="assets/intro-images/hand-swipe.gif" alt=""></div>
+<script>
+(()=>{const NS='http://www.w3.org/2000/svg',g=document.getElementById('pockets'),dm=document.getElementById('diamonds');
+const nums=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const reds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]),P=(r,a)=>[200+r*Math.sin(a),200-r*Math.cos(a)];
+nums.forEach((n,i)=>{const a0=i*2*Math.PI/37+.012,a1=(i+1)*2*Math.PI/37-.012,p0=P(118,a0),p1=P(118,a1),q1=P(162,a1),q0=P(162,a0);
+ const e=document.createElementNS(NS,'path');e.setAttribute('d',`M${p0} A118 118 0 0 1 ${p1} L${q1} A162 162 0 0 0 ${q0}Z`);
+ e.setAttribute('fill',n===0?'#2f9d62':reds.has(n)?'#c93a3f':'#2b2f38');e.setAttribute('stroke','#e5c88c');e.setAttribute('stroke-width','.8');g.appendChild(e);
+ const [x,y]=P(150,(a0+a1)/2),t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',y+3);t.setAttribute('fill','#fbeecb');t.setAttribute('font-size','9');
+ t.setAttribute('font-family','Georgia,serif');t.setAttribute('font-weight','bold');t.setAttribute('text-anchor','middle');t.setAttribute('transform',`rotate(${(i+.5)*360/37},${x},${y})`);t.textContent=n;g.appendChild(t)});
+for(let k=0;k<8;k++){const a=k*Math.PI/4,[x,y]=P(174,a),d=document.createElementNS(NS,'path');d.setAttribute('d','M0-11L6 0 0 11-6 0Z');d.setAttribute('transform',`translate(${x},${y}) rotate(${k*45})`);dm.appendChild(d)}})();
+</script>
+<div class="rays" id="rays" aria-hidden="true"></div>
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="fc b"></div><div class="fc y"></div><div class="fc r"></div>
+  <div class="logo" id="logo">Sigamos</div>
+</div>
+<div class="burst" id="burst" aria-hidden="true"></div>
+
+<button class="boot" id="boot" aria-label="Toca para empezar">
+  <span class="boot-ring"><img class="hand" src="assets/intro-images/hand-click.gif" alt=""></span>
+</button>
+
+<section class="screen" id="screen">
+  <button class="back" id="back">← Inicio</button>
+  <h2 id="ttl"></h2>
+  <img id="pic" alt="">
+  <p id="note"></p>
+</section>
+<section class="screen sset" id="sset" aria-label="Ajustes">
+  <div class="bar"><button class="back" id="sback">← Inicio</button><h2>Ajustes</h2></div>
+  <div class="sw">
+    <div class="deck"><div class="disc"><div class="lbl" id="lbl"></div></div><div class="arm"></div></div>
+    <div class="trk"><b id="tTitle"></b><small id="tArtist"></small></div>
+    <div class="seek"><span id="tCur">0:00</span><input type="range" id="seek" min="0" max="1000" value="0" aria-label="Posición"><span id="tDur">0:00</span></div>
+    <div class="ctl">
+      <button id="shuf" class="shuf" aria-label="Aleatorio" aria-pressed="false" title="Aleatorio"><svg viewBox="0 0 24 24"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
+      <button id="prev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9.5 12 18 6v12z"/></svg></button>
+      <button id="pp" class="pp" aria-label="Reproducir / pausar"><span class="ic-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span><span class="ic-pause"><svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></span></button>
+      <button id="next" aria-label="Siguiente"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM14.5 12 6 18V6z"/></svg></button>
+      <button class="more" disabled title="Próximamente" aria-label="Más (próximamente)"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+    </div>
+    <div class="lib" id="lib">
+      <button id="libBtn" aria-expanded="false"><span class="th" id="libTh"></span><span id="libName">Biblioteca</span><i>▾</i></button>
+      <ul id="libList"></ul>
+    </div>
+    <div class="queue" id="queue" hidden><div class="qh"><span>Cola</span><button id="qclear">Vaciar</button></div><ol id="qlist"></ol></div>
+    <div class="vol"><label for="vMus">Música</label><input type="range" id="vMus" min="0" max="100" value="10"><output id="oMus">10%</output></div>
+    <div class="vol"><label for="vSfx">Efectos</label><input type="range" id="vSfx" min="0" max="100" value="100"><output id="oSfx">100%</output></div>
+    <div class="opt"><label for="tUni">Música universal<small>Tu música elegida suena en todo el juego</small></label><input type="checkbox" class="tg" id="tUni"></div>
+    <div class="opt"><label for="tDev">Modo desarrollador<small>Muestra la caja flotante Win all / Lose all</small></label><input type="checkbox" class="tg" id="tDev"></div>
+  </div>
+</section>
+<div class="gamelayer" id="gamelayer"><iframe id="gameframe" title="Juego" allow="autoplay"></iframe></div>
+<div class="devbox" id="devbox" role="group" aria-label="Modo desarrollador"><div class="dh" id="devHead">DEV ⠿</div><button class="dw" id="devWin" aria-pressed="false">Win all</button><button class="dl" id="devLose" aria-pressed="false">Lose all</button></div>
+<button class="replay" id="replay" title="Ver la intro otra vez" aria-label="Ver la intro otra vez">↻</button>
+
+<script>
+/* =========================================================
+   AUDIO  (files live in assets/intro-audio)
+   ========================================================= */
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const A='assets/intro-audio/';
+/* Note: carousel-pick-3.mp3 (the "card riffle" the notes describe) wasn't
+   actually in the uploaded assets, so that sound is synthesized below
+   (cardRiffle()) instead of loaded from a file — swap in a real recording
+   there whenever one's ready. */
+const F={sparkle:'sparkle-intro.wav',bg:'bg-nahuhulog.mp3',p1:'card-place-1.wav',p2:'card-place-2.mp3',
+         s1:'paperslide 1.mp3',s2:'paperslide 2.mp3', s3:'paperslide 3.mp3', bell:'bell-service.wav', d1:'door-slide.wav', d2:'door-close.wav'};
+const GAIN={s1:1,s2:.85,s3:.85};                            /* evens out the 3 paperslide sounds */
+const S={};for(const k in F){const a=new Audio(A+F[k]);a.preload='auto';a.volume=GAIN[k]??1;S[k]=a}
+S.bg.volume=.1;                       /* background music: 20% for the whole session */
+let sfxVol=1;
+const play=(k,rate=1)=>{const a=S[k];a.volume=Math.min(1,(GAIN[k]??1)*sfxVol);a.currentTime=0;a.playbackRate=rate;
+  a.preservesPitch=a.mozPreservesPitch=a.webkitPreservesPitch=(rate===1);a.play().catch(()=>{})};
+const unlock=()=>{for(const k in S)if(k!=='sparkle'){const a=S[k];a.muted=true;
+  a.play().then(()=>{a.pause();a.currentTime=0;a.muted=false}).catch(()=>{a.muted=false})}};
+
+/* ---- carousel navigation sound: cycles through 1 / 2 / 3 ---- */
+let altTurn=0;
+const altPick=()=>{
+  const sounds=['s1','s2','s3'];
+  play(sounds[altTurn], .96+Math.random()*.08);
+  altTurn=(altTurn+1)%sounds.length;
+};
+/* ---- "cabinet opening" sound (no file was supplied — synthesized to match
+   the slide-up + shrink of the logo/cards): a soft wooden slide, then a
+   short low thunk as everything settles into the header/carousel. ---- */
+let actx=null;
+function ac(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx}catch(e){return null}}
+function cabinetOpen(){
+  const a=ac();if(!a)return;
+  const t0=a.currentTime+.02;
+  // sliding runner: filtered noise, frequency sweeping down as it "opens"
+  const n=Math.floor(a.sampleRate*.85),buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+  const src=a.createBufferSource();src.buffer=buf;
+  const bp=a.createBiquadFilter();bp.type='bandpass';bp.Q.value=.7;
+  bp.frequency.setValueAtTime(2200,t0);bp.frequency.exponentialRampToValueAtTime(500,t0+.85);
+  const g=a.createGain();g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(.5,t0+.12);
+  g.gain.linearRampToValueAtTime(.32,t0+.6);g.gain.linearRampToValueAtTime(.0001,t0+.88);
+  src.connect(bp).connect(g).connect(a.destination);src.start(t0);src.stop(t0+.9);
+  // thunk as it seats into place
+  const o=a.createOscillator(),og=a.createGain();
+  o.type='triangle';o.frequency.setValueAtTime(160,t0+.8);o.frequency.exponentialRampToValueAtTime(60,t0+.98);
+  og.gain.setValueAtTime(.0001,t0+.8);og.gain.linearRampToValueAtTime(.55,t0+.82);og.gain.exponentialRampToValueAtTime(.0001,t0+1.05);
+  o.connect(og).connect(a.destination);o.start(t0+.8);o.stop(t0+1.08);
+}
+/* ---- "card riffle" sound for the Reseña/Examen tap (synthesized —
+   see the note above on carousel-pick-3.mp3): a fast run of short
+   filtered clicks, like a deck being riffled. ---- */
+function cardRiffle(){
+  const a=ac();if(!a)return;
+  const t0=a.currentTime+.02,steps=9;
+  for(let i=0;i<steps;i++){
+    const t=t0+i*.028+Math.random()*.006;
+    const n=Math.floor(a.sampleRate*.03),buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
+    for(let j=0;j<n;j++)d[j]=(Math.random()*2-1)*(1-j/n);
+    const src=a.createBufferSource();src.buffer=buf;
+    const bp=a.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1800+i*90;bp.Q.value=2.2;
+    const g=a.createGain();g.gain.value=.28*(1-i/(steps*1.6));
+    src.connect(bp).connect(g).connect(a.destination);src.start(t);
+  }
+}
+
+/* =========================================================
+   DATA + CIRCULAR CAROUSEL MODEL
+   The 5 cards sit on a circle whose centre is the wheel. `pos` is a
+   continuous number (0..N-1); card i is at angle (i-pos)*STEP. Nothing is
+   ever hidden or wrapped: it is a straight line of 5, so the first and last
+   card are real ends (rubber-band, then settle back).
+   Colours run yellow, BLUE, RED(start), YELLOW, blue: the two new cards take
+   the opposite side's colour so no two neighbours match.
+   ========================================================= */
+const WARN_ICON='<svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2Z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1.15" fill="#fff"/></svg>';
+const DIR_ICON='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M15.5 8.5 13.4 13.4 8.5 15.5l2.1-4.9 4.9-2.1Z" fill="#fff"/></svg>';
+const GEAR_ICON='<svg viewBox="0 0 24 24"><path d="M10.21 4.82 L10.40 1.93 L13.60 1.93 L13.79 4.82 L15.81 5.66 L18.00 3.75 L20.25 6.00 L18.34 8.19 L19.18 10.21 L22.07 10.40 L22.07 13.60 L19.18 13.79 L18.34 15.81 L20.25 18.00 L18.00 20.25 L15.81 18.34 L13.79 19.18 L13.60 22.07 L10.40 22.07 L10.21 19.18 L8.19 18.34 L6.00 20.25 L3.75 18.00 L5.66 15.81 L4.82 13.79 L1.93 13.60 L1.93 10.40 L4.82 10.21 L5.66 8.19 L3.75 6.00 L6.00 3.75 L8.19 5.66Z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.6"/></svg>';
+const DATA=[
+  {n:'Ajustes',        s:'Configuración',          img:'assets/intro-images/card-settings.jpg',  col:'#ff3e48', set:true},
+  {n:'Dirección',       s:'Guía de manejo',         img:'assets/intro-images/card-direction.jpg', col:'#ffd94f', game:'games/direccion/index.html'},
+  {n:'Interior',        s:'Adentro del carro',      img:'assets/intro-images/interior.jpg', col:'#42b6ff', game:'games/kia/index.html'},
+  {n:'Car Body',        s:'Por fuera del carro',    img:'assets/intro-images/car-body.jpg', col:'#ff3e48', game:'games/carbody/index.html'},
+  {n:'Cluster',         s:'Tablero de instrumentos',img:'assets/intro-images/cluster.jpg',  col:'#ffd94f', game:'games/cluster/index.html'},
+  {n:'Señales',         s:'Señales de tránsito',    img:'assets/intro-images/card-signals.webp',  col:'#42b6ff', game:'games/senales/index.html'},
+  {n:'Ajustes',        s:'Configuración',          img:'assets/intro-images/card-settings.jpg',  col:'#ff3e48', set:true},
+];
+const START=3, N=DATA.length; let STEP=24;                 /* Car Body (red) starts in the middle */
+const T=(o)=>`translateX(${o.x}px) rotate(${o.a}deg) translateY(${-o.r}px) rotate(${o.b}deg) scale(${o.s})`;
+
+function $(id){return document.getElementById(id)}
+const rail=$('rail'),stage=$('stage'),root=document.documentElement;
+const cards=DATA.map((d,i)=>{
+  const c=document.createElement('figure');c.className='pc'+(d.ph?' placeholder':'');
+  c.style.setProperty('--c',d.col);
+  if(d.ph){c.style.background=d.col;c.innerHTML=`${d.ph}<figcaption><b>${d.n}</b><small>${d.s}</small></figcaption>`;}
+  else{c.style.backgroundImage=`url(${d.img})`;c.innerHTML=`<figcaption><b>${d.n}</b><small>${d.s}</small></figcaption>`;}
+  rail.append(c);return c;
+});
+let idx=START,pos=START,bigT=0,bump=0,ready=false,busy=false,revealed=false,mode='';
+const ent=DATA.map(()=>1);                              /* 1 = still off to the right, 0 = seated on the circle */
+const fanCards=[...document.querySelectorAll('.fc')];
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const easeOut=t=>1-Math.pow(1-t,3), easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2, lin=t=>t;
+function tween(from,to,ms,fn,ease=easeOut){let dead=false,res;const p=new Promise(r=>res=r);p.stop=()=>{dead=true;res()};
+  const t0=performance.now(),step=now=>{if(dead)return;const k=clamp((now-t0)/(RM?1:ms),0,1);fn(from+(to-from)*ease(k));k<1?requestAnimationFrame(step):res()};
+  requestAnimationFrame(step);return p}
+
+let L={};
+function layout(){                                      /* cards in the middle; a BIG wheel of which only the top 30% peeks up from the bottom */
+  const W=innerWidth,H=innerHeight;
+  const phone=W<=600;
+  const ch=phone ? Math.min(H*.38,W*.82,460) : Math.min(H*.36,W*.6875,420);
+  const cw=ch*640/880;
+  const wd=phone ? Math.min(W*1.7,860) : Math.min(W*.75,H*1.15,1100);
+  const wcy=H+.2*wd;                                   /* centre below the screen: visible cap = .3 * diameter */
+  const cy=H*.47,R=wcy-cy;
+  STEP=clamp(cw*1.2/R*180/Math.PI,12,30);              /* neighbours peek in at the sides */
+  const wheelTop=H-.3*wd,cardBottom=cy+ch/2;
+  const dockC=Math.max(cardBottom+40,wheelTop-28);     /* small buttons sit low, just above the wheel */
+  L={cx:W/2,wcy,R,cw,ch,px:R*STEP*Math.PI/180};
+  stage.style.setProperty('--wd',wd+'px');
+  stage.style.setProperty('--wy',wcy+'px');
+  stage.style.setProperty('--dockY',(dockC-46)+'px');
+  root.style.setProperty('--dockY',(dockC-2)+'px');
+  const logo=$('hlogo');
+  logo.style.position='absolute';logo.style.left='50%';
+  logo.style.top=(cy-ch/2+4)+'px';
+  logo.style.transform='translate(-50%,-100%) rotate(-8deg)';
+  cards.forEach(c=>{c.style.width=cw+'px';c.style.height=ch+'px'});render();
+}
+function render(){
+  if(!L.cw)return;const {cx,wcy,R,cw,ch}=L;
+  const r=clamp(Math.round(pos),0,N-1);if(r!==idx){idx=r;root.style.setProperty('--pick',DATA[r].col);$('modes').classList.toggle('set',!!DATA[r].set)}
+  cards.forEach((c,i)=>{const d=i-pos,ad=Math.min(Math.abs(d),1),
+    s=(1-.12*ad)*(.88+.12*bigT)*(i===idx?1+bump:1),a=d*STEP+ent[i]*95;
+    c.style.transform=`translate(${cx}px,${wcy}px) rotate(${a}deg) translate(0,${-R}px) scale(${s}) translate(${-cw/2}px,${-ch/2}px)`;
+    c.style.zIndex=Math.round(20-Math.abs(d)*4);c.classList.toggle('cur',i===idx&&bigT===1)});
+  $('rotor').style.transform=`rotate(${-pos*STEP*1.6}deg)`;
+}
+root.style.setProperty('--pick',DATA[START].col);
+addEventListener('resize',layout);layout();
+
+/* =========================================================
+   INTRO SEQUENCE
+   ========================================================= */
+const HEART='<svg viewBox="20 14 42 42"><path d="M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z" fill="COLOR"/></svg>';
+const STAR='<svg viewBox="0 0 24 24"><path d="M12 0c.9 6.6 4.4 10.1 12 12-7.6 1.9-11.1 5.4-12 12-.9-6.6-4.4-10.1-12-12C7.6 10.1 11.1 6.6 12 0z" fill="COLOR"/></svg>';
+function burst(){                                    /* 40 hearts + stars explode from the centre */
+  if(RM)return;
+  const box=$('burst'),cols=['#ff5f80','#ff3e48','#ffd94f','#42b6ff','#ff86aa'];
+  for(let i=0;i<40;i++){const s=document.createElement('span'),c=cols[i%5],z=18+Math.random()*26;
+    s.innerHTML=(Math.random()>.35?HEART:STAR).replace('COLOR',c);s.style.width=s.style.height=z+'px';
+    const a=Math.random()*6.283,d=(.22+Math.random()*.4)*Math.min(innerWidth,innerHeight)*1.5;
+    s.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:1},
+      {transform:`translate(calc(-50% + ${Math.cos(a)*d}px),calc(-50% + ${Math.sin(a)*d}px)) rotate(${(Math.random()-.5)*540}deg) scale(${1+Math.random()*.9})`,opacity:0}],
+      {duration:1300+Math.random()*900,easing:'cubic-bezier(.1,.8,.3,1)'}).onfinish=()=>s.remove();
+    box.append(s)}
+}
+function swirl(){                                    /* Uno-style: cards orbit and spin, then shrink into the middle */
+  if(RM){fanCards.forEach((c)=>c.style.transform='var(--fanpos) scale(.63)');return wait(400)}
+  const R=Math.min(150,innerWidth*.26);
+  return Promise.all(fanCards.map((c,i)=>{const th=i*120;
+    return c.animate([{transform:'var(--fanpos)'},
+      {transform:T({x:0,a:th+220,r:R,b:(th+220)*.6+(i-1)*10,s:1.05}),offset:.4},
+      {transform:T({x:0,a:th+560,r:R*1.15,b:(th+560)*.6,s:.95}),offset:.75},
+      {transform:'var(--fanpos) scale(.63)'}],{duration:2400,easing:'ease-in-out',fill:'forwards'}).finished}));
+}
+function dockLogo(){                                 /* logo slides up and shrinks into the header spot */
+  const l=$('logo'),h=$('hlogo'),a=l.getBoundingClientRect(),b=h.getBoundingClientRect();
+  const dx=(b.left+b.width/2)-(a.left+a.width/2),dy=(b.top+b.height/2)-(a.top+a.height/2),s=b.width/a.width;
+  const an=l.animate([{transform:'none'},{transform:`translate(${dx}px,${dy}px) scale(${s}) rotate(-8deg)`}],
+    {duration:RM?1:1100,easing:'cubic-bezier(.6,0,.2,1)',fill:'forwards'});
+  return an.finished.then(()=>{h.classList.add('on');l.style.visibility='hidden';an.cancel()});
+}
+function flick(){                                    /* the 3 colour cards get flicked down off the screen, one after another */
+  if(RM)return Promise.all(fanCards.map(c=>c.animate([{opacity:1},{opacity:0}],{duration:300,fill:'forwards'}).finished));
+  return Promise.all([2,1,0].map((i,k)=>{const dir=i-1;      /* red first, then yellow, then blue */
+    return fanCards[i].animate([
+      {translate:'0 0',rotate:'0deg',opacity:1},
+      {translate:`${dir*60}px ${innerHeight*.7}px`,rotate:`${dir*34+(dir?0:14)}deg`,opacity:1,offset:.85},
+      {translate:`${dir*80}px ${innerHeight*.95}px`,rotate:`${dir*44+(dir?0:18)}deg`,opacity:0}],
+      {duration:620,delay:k*150,easing:'cubic-bezier(.5,0,.9,.6)',fill:'forwards'}).finished}));
+}
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+
+async function start(){
+  $('boot').disabled=true;$('boot').classList.add('go');unlock();
+
+  // t=0: sparkle plays, "Sigamos" fades in within the first second.
+  play('sparkle');$('intro').classList.add('show');
+
+  // ~t=0.95s: the sparkle's "ding" — the 3 cards pop up from behind the
+  // logo with a ray/streak burst, and the pink boot gate lifts back to
+  // the normal hearts background.
+  await wait(RM?200:950);
+  $('gate').classList.remove('on');
+  $('rays').classList.add('on');
+  $('intro').classList.add('cardspop');
+
+  // sparkle finishes (fallback if 'ended' doesn't fire): logo fades out,
+  // rays fade, hearts/stars burst, Nahuhulog starts, cards swirl Uno-style.
+  await Promise.race([new Promise(r=>S.sparkle.addEventListener('ended',r,{once:true})),wait(2150)]);
+  $('intro').classList.add('logo-out');
+  $('rays').classList.remove('on');
+  burst();S.bg.play().catch(()=>{});
+  await swirl();
+
+  // logo reappears on top of the shrunk cards, holds.
+  $('intro').classList.remove('logo-out');await wait(1400);
+
+  // slide + shrink into the header spot, flick the colour cards away —
+  // the "cabinet opening" sound plays for this whole transition.
+  cabinetOpen();$('wheel').classList.add('on');
+  const d=dockLogo(),f=flick();
+  await wait(RM?0:800);
+
+  // photo cards ride in along the circle from the right: right, middle, left.
+  const ents=[];
+  for(const i of [idx+1,idx,idx-1]){cards[i].style.visibility='visible';play(Math.random()<.5?'p1':'p2');
+    ents.push(tween(1,0,1000,v=>{ent[i]=v;render()},easeOut));await wait(460)}
+  await Promise.all([d,f,...ents]);
+  cards.forEach((c,i)=>{if(Math.abs(i-idx)>1){ent[i]=0;c.style.visibility='visible'}});render();   /* the other cards wait off-screen */
+  ready=true;applyDev();tween(0,1,800,v=>{bigT=v;render()},easeIO);
+
+  // carousel ready: pink gate returns (must swipe before anything else),
+  // icon-only swipe hint appears.
+  $('gate').classList.add('on');
+  $('hint').classList.add('on');
+}
+$('boot').onclick=start;
+
+/* =========================================================
+   CAROUSEL
+   ========================================================= */
+
+function touchBurst(x,y){                         /* large hearts + stars at the first touch */
+  if(RM)return;
+  const box=$('burst'),cols=['#ff5f80','#ff3e48','#ffd94f','#42b6ff','#ff86aa'];
+  box.style.left=x+'px';
+  box.style.top=y+'px';
+
+  for(let i=0;i<64;i++){
+    const s=document.createElement('span'),
+          c=cols[i%cols.length],
+          z=24+Math.random()*42;
+
+    s.innerHTML=(Math.random()>.35?HEART:STAR).replace('COLOR',c);
+    s.style.width=s.style.height=z+'px';
+
+    const a=Math.random()*Math.PI*2,
+          d=100+Math.random()*Math.min(innerWidth,innerHeight)*.38;
+
+    s.animate([
+      {transform:'translate(-50%,-50%) scale(.25)',opacity:1},
+      {
+        transform:`translate(calc(-50% + ${Math.cos(a)*d}px),calc(-50% + ${Math.sin(a)*d}px)) rotate(${(Math.random()-.5)*540}deg) scale(${.9+Math.random()*.9})`,
+        opacity:0
+      }
+    ],{
+      duration:950+Math.random()*500,
+      easing:'cubic-bezier(.1,.8,.3,1)'
+    }).onfinish=()=>s.remove();
+
+    box.append(s);
+  }
+}
+let firstTouchX=innerWidth/2,firstTouchY=innerHeight/2;
+
+function reveal(){
+  if(revealed)return;
+  revealed=true;
+
+  $('gate').classList.remove('on');           /* the first swipe/tap clears the pink gate */
+  $('hint').classList.remove('on');
+  $('modes').classList.add('on');
+
+  touchBurst(firstTouchX,firstTouchY);         /* explode hearts and stars at touch */
+  if(navigator.vibrate)navigator.vibrate([35,25,55]); /* vibrate if supported */
+}
+let posTw=null,x0=null,y0=null,p0=0,dragged=false,downCard=null,hist=[];
+function goTo(t,base=idx,ease=easeIO){                  /* glide to card t: one continuous tween, never a jump */
+  t=clamp(t,0,N-1);posTw&&posTw.stop();if(t!==base)altPick();reveal();
+  posTw=tween(pos,t,480+Math.min(Math.abs(t-pos),2)*280,v=>{pos=v;render()},ease)}
+rail.addEventListener('pointerdown',e=>{
+  if(!ready||busy)return;
+
+  firstTouchX=e.clientX;                       /* remember first touch position */
+  firstTouchY=e.clientY;
+
+  posTw&&posTw.stop();
+  x0=e.clientX;
+  y0=e.clientY;
+  p0=pos;
+  dragged=false;
+
+  downCard=e.target.closest('.pc');
+  hist=[[e.timeStamp,e.clientX]];
+  rail.setPointerCapture?.(e.pointerId);
+});
+rail.addEventListener('pointermove',e=>{if(x0===null)return;const dx=e.clientX-x0,dy=e.clientY-y0;
+  if(!dragged&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy))dragged=true;
+  if(dragged){let p=p0-dx/L.px;p=p<0?p*.35:p>N-1?N-1+(p-(N-1))*.35:p;pos=p;   /* soft rubber-band at the two ends */
+    hist.push([e.timeStamp,e.clientX]);if(hist.length>6)hist.shift();render()}});
+rail.addEventListener('pointerup',e=>{if(x0===null)return;x0=null;
+  if(dragged){const a=hist[0],b=hist[hist.length-1],v=b[0]>a[0]?(b[1]-a[1])/(b[0]-a[0]):0,base=clamp(Math.round(p0),0,N-1);
+    goTo(clamp(Math.round(pos-v*220/L.px),base-1,base+1),base,easeOut)}
+  else if(downCard){const i=cards.indexOf(downCard);
+    if(i===idx&&DATA[i].set){openSettings()}
+    else if(i===idx){play('bell');tween(0,1,360,k=>{bump=.035*Math.sin(k*Math.PI);render()},lin);reveal()}
+    else goTo(i)}});
+rail.addEventListener('pointercancel',()=>{if(x0===null)return;x0=null;goTo(clamp(Math.round(pos),0,N-1),idx,easeOut)});
+addEventListener('keydown',e=>{if(!ready||busy)return;if(e.key==='ArrowLeft')goTo(idx-1);if(e.key==='ArrowRight')goTo(idx+1)});
+
+/* =========================================================
+   Reseña / Examen  (placeholders: the real game screens replace these)
+   ========================================================= */
+
+/* =========================================================
+   AJUSTES: music player (record player), library, volumes
+   ADD MORE MUSIC: just drop mp3 (or ogg/wav/m4a/flac/aac/opus) files into  assets/music/
+   They are found automatically (see loadMusicFolder below). Nothing to edit.
+   Optional: name a file "Artist - Title.mp3" to set artist and title, and put a picture with
+   the same name (Title.jpg/png/webp) next to it to use it as the cover.
+   ========================================================= */
+const TRACKS=[
+  {title:'Nahuhulog', artist:'Sigamos Intro', src:'assets/intro-audio/bg-nahuhulog.mp3', cover:''},
+];
+const DEFAULT_COVER='assets/intro-images/cover-default.svg';
+const music=S.bg;let ti=0;
+music.loop=TRACKS.length===1;
+const fmt=t=>isFinite(t)?Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'):'0:00';
+const cov=t=>`url("${t.cover||DEFAULT_COVER}")`;
+function paintTrack(){
+  const t=TRACKS[ti];$('lbl').style.backgroundImage=cov(t);$('tTitle').textContent=t.title;$('tArtist').textContent=t.artist;
+  $('libName').textContent=t.title;$('libTh').style.backgroundImage=cov(t);
+  [...$('libList').children].forEach((li,i)=>li.classList.toggle('on',i===ti));
+}
+function setTrack(i,play=true){
+  ti=(i+TRACKS.length)%TRACKS.length;
+  if(!music.src.endsWith(encodeURI(TRACKS[ti].src))){music.src=encodeURI(TRACKS[ti].src)}
+  else music.currentTime=0;
+  paintTrack();if(play)music.play().catch(()=>{});
+}
+function renderLib(){
+$('libList').innerHTML='';
+TRACKS.forEach((t,i)=>{const li=document.createElement('li'),b=document.createElement('button');
+  b.innerHTML=`<span class="th"></span><span><b></b><small></small></span>`;
+  b.querySelector('.th').style.backgroundImage=cov(t);b.querySelector('b').textContent=t.title;b.querySelector('small').textContent=t.artist;
+  b.onclick=()=>{setTrack(i);$('lib').classList.remove('open');$('libBtn').setAttribute('aria-expanded','false')};
+  b.classList.add('pick');
+  const mk=(txt,ttl,fn)=>{const x=document.createElement('button');x.className='qa';x.textContent=txt;x.title=ttl;x.setAttribute('aria-label',ttl);x.onclick=fn;return x};
+  li.append(b,mk('Después','Reproducir a continuación',()=>qAdd(i,true)),mk('+ Cola','Agregar a la cola',()=>qAdd(i,false)));$('libList').append(li)});
+paintTrack()}
+renderLib();
+
+/* ---- assets/music/ : every audio file in that folder becomes a track ----
+   A web page cannot list a folder by itself, so it asks the server for the folder page
+   (Live Server, python -m http.server, nginx and most dev servers give one).
+   If the server gives no listing, it reads assets/music/playlist.json instead.
+   That file is made by update-music.bat / update-music.command / update-music.js. */
+const MUSIC_DIR='assets/music/',AUDIO_RE=/\.(mp3|ogg|oga|wav|m4a|aac|flac|opus|weba)$/i,IMG_RE=/\.(jpe?g|png|webp|gif|svg)$/i;
+const baseName=f=>f.replace(/\.[^.]+$/,'');
+function makeTrack(file,imgs){
+  let name=baseName(file).replace(/_/g,' ').trim(),artist='Sigamos',title=name;
+  const m=name.match(/^(.+?)\s+[-–—]\s+(.+)$/);if(m){title=m[1].trim();artist=m[2].trim()}  
+  const img=imgs.find(i=>baseName(i).toLowerCase()===baseName(file).toLowerCase());
+  return{title,artist,src:MUSIC_DIR+file,cover:img?MUSIC_DIR+img:''}}
+async function musicFiles(){
+  try{const r=await fetch(MUSIC_DIR,{cache:'no-store'});
+    if(r.ok&&/html/.test(r.headers.get('content-type')||'')){
+      const doc=new DOMParser().parseFromString(await r.text(),'text/html');
+      const names=[...doc.querySelectorAll('a[href]')].map(a=>a.getAttribute('href').split('?')[0].split('#')[0])
+        .filter(h=>h&&!h.endsWith('/')).map(h=>{const f=h.split('/').pop();try{return decodeURIComponent(f)}catch(e){return f}});
+      if(names.some(n=>AUDIO_RE.test(n)))return names}}catch(e){}
+  try{const r=await fetch(MUSIC_DIR+'playlist.json',{cache:'no-store'});if(r.ok){const j=await r.json();return Array.isArray(j)?j:(j.files||[])}}catch(e){}
+  return[]}
+async function loadMusicFolder(){
+  const names=await musicFiles();if(!names.length)return;
+  const imgs=names.filter(n=>IMG_RE.test(n)),have=new Set(TRACKS.map(t=>t.src));
+  names.filter(n=>AUDIO_RE.test(n)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}))
+    .forEach(f=>{const t=makeTrack(f,imgs);if(!have.has(t.src)){TRACKS.push(t);have.add(t.src)}});
+  renderLib();syncLoop()}
+loadMusicFolder();
+$('libBtn').onclick=()=>{const o=$('lib').classList.toggle('open');$('libBtn').setAttribute('aria-expanded',o)};
+$('pp').onclick=()=>music.paused?music.play().catch(()=>{}):music.pause();
+$('next').onclick=()=>advance();$('prev').onclick=()=>music.currentTime>3?(music.currentTime=0):setTrack(ti-1);
+const sync=()=>$('sset').classList.toggle('playing',!music.paused);
+['play','pause','ended'].forEach(ev=>music.addEventListener(ev,sync));
+music.addEventListener('ended',()=>{if(!music.loop)advance()});
+let seeking=false;
+const tick=()=>{$('tCur').textContent=fmt(music.currentTime);$('tDur').textContent=fmt(music.duration);
+  if(!seeking&&music.duration)$('seek').value=music.currentTime/music.duration*1000};
+['timeupdate','loadedmetadata'].forEach(ev=>music.addEventListener(ev,tick));
+$('seek').addEventListener('input',e=>{seeking=true;if(music.duration)music.currentTime=e.target.value/1000*music.duration;tick()});
+$('seek').addEventListener('change',()=>seeking=false);
+function vol(id,out,apply,key){const el=$(id),o=$(out);
+  try{const v=localStorage.getItem(key);if(v!==null)el.value=v}catch(e){}
+  const go=()=>{o.textContent=el.value+'%';apply(el.value/100);try{localStorage.setItem(key,el.value)}catch(e){}};
+  el.addEventListener('input',go);go()}
+vol('vMus','oMus',v=>music.volume=v,'sigamos.music');
+vol('vSfx','oSfx',v=>sfxVol=v,'sigamos.sfx');
+sync();
+
+/* =========================================================
+   PLAYER EXTRAS: shuffle, play next, queue
+   Q = queued track numbers; the first `pn` are "play next" entries (kept in the order pressed).
+   Next / end of song: queue first, then shuffle (random other track), then the following track.
+   ========================================================= */
+const store=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+let Q=[],pn=0,shuffle=store('sigamos.shuffle')==='1';
+const syncLoop=()=>{music.loop=TRACKS.length===1&&!Q.length};
+function advance(){
+  if(Q.length){const t=Q.shift();pn=Math.max(0,pn-1);renderQueue();syncLoop();setTrack(t);return}
+  if(TRACKS.length===1){music.currentTime=0;music.play().catch(()=>{});return}
+  if(shuffle){let t;do{t=Math.floor(Math.random()*TRACKS.length)}while(t===ti);setTrack(t);return}
+  setTrack(ti+1)}
+function qAdd(i,next){if(next){Q.splice(pn,0,i);pn++}else Q.push(i);renderQueue();syncLoop()}
+function renderQueue(){
+  const q=$('queue'),l=$('qlist');q.hidden=!Q.length;l.innerHTML='';
+  Q.forEach((t,k)=>{const li=document.createElement('li'),x=document.createElement('button');
+    li.append(TRACKS[t].title+(k<pn?' · siguiente':''));x.className='qx';x.textContent='×';x.setAttribute('aria-label','Quitar de la cola');
+    x.onclick=()=>{Q.splice(k,1);if(k<pn)pn--;renderQueue();syncLoop()};li.append(x);l.append(li)})}
+$('qclear').onclick=()=>{Q=[];pn=0;renderQueue();syncLoop()};
+const paintShuf=()=>{$('shuf').classList.toggle('on',shuffle);$('shuf').setAttribute('aria-pressed',shuffle)};
+$('shuf').onclick=()=>{shuffle=!shuffle;store('sigamos.shuffle',shuffle?'1':'0');paintShuf()};
+paintShuf();syncLoop();
+
+/* =========================================================
+   OPTIONS: Música universal + Modo desarrollador (Win all / Lose all)
+   Universal music: the game's own background loop is switched off (in games/senales/bridge.js) and the
+   music chosen here keeps playing. Developer box: devAct is sent to the open game and to every game
+   opened later (?dev=win|lose); each game's bridge decides how to "win" or "lose" its current run.
+   ========================================================= */
+let uni=store('sigamos.uni')==='1',devOn=store('sigamos.dev')==='1',devAct='off',duckedByGame=false;
+const gameOpen=()=>$('gamelayer').classList.contains('on');
+function sendDev(){if(gameOpen())try{$('gameframe').contentWindow.postMessage({sigamos:'dev',mode:devAct},'*')}catch(e){}}
+function paintDev(){$('devWin').setAttribute('aria-pressed',devAct==='win');$('devLose').setAttribute('aria-pressed',devAct==='lose')}
+function applyDev(){$('devbox').classList.toggle('on',devOn&&ready);
+  if(!devOn&&devAct!=='off'){devAct='off';paintDev();sendDev()}}
+$('devWin').onclick=()=>{devAct=devAct==='win'?'off':'win';paintDev();sendDev()};
+$('devLose').onclick=()=>{devAct=devAct==='lose'?'off':'lose';paintDev();sendDev()};
+$('tUni').checked=uni;$('tUni').onchange=e=>{uni=e.target.checked;store('sigamos.uni',uni?'1':'0')};
+$('tDev').checked=devOn;$('tDev').onchange=e=>{devOn=e.target.checked;store('sigamos.dev',devOn?'1':'0');applyDev()};
+(()=>{const box=$('devbox'),h=$('devHead');let dx=0,dy=0,drag=false;                /* drag the box by its DEV header */
+  h.addEventListener('pointerdown',e=>{const r=box.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;drag=true;h.setPointerCapture(e.pointerId);e.preventDefault()});
+  h.addEventListener('pointermove',e=>{if(!drag)return;const r=box.getBoundingClientRect();
+    box.style.left=clamp(e.clientX-dx,4,innerWidth-r.width-4)+'px';box.style.top=clamp(e.clientY-dy,4,innerHeight-r.height-4)+'px';box.style.right='auto'});
+  const end=()=>{drag=false};h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end)})();
+
+async function openSettings(){if(busy)return;busy=true;play('d2');stage.classList.add('down');await wait(800);
+  const s=$('sset');s.classList.add('on');requestAnimationFrame(()=>s.classList.add('vis'))}
+$('setBtn').onclick=openSettings;
+$('sback').onclick=async()=>{const s=$('sset');s.classList.remove('vis');await wait(350);s.classList.remove('on');
+  play('d1');stage.classList.remove('down');await wait(900);busy=false};
+document.querySelectorAll('.mode:not(.set-btn)').forEach(b=>b.onclick=async()=>{
+  if(busy)return;busy=true;mode=b.dataset.m;play('d2');stage.classList.add('down');await wait(800);
+  const d=DATA[idx];
+  if(d.game){openGame(d.game,mode);return}
+  $('ttl').innerHTML=`${d.n}<small>${mode}</small>`;
+  $('pic').style.display=d.ph?'none':'';
+  if(!d.ph)$('pic').src=d.img;
+  $('note').textContent=d.ph?`${d.n} todavía no tiene contenido.`:`Aquí va el juego de ${mode}.`;
+  const s=$('screen');s.classList.add('on');requestAnimationFrame(()=>s.classList.add('vis'))});
+/* ---- real games (card has a `game` path): run in an iframe, return via postMessage ---- */
+let resumeMusic=false;
+function openGame(src,m){
+  resumeMusic=!uni&&!music.paused;if(!uni)music.pause();   /* the game has its own music: only one plays (unless Música universal is on) */
+  $('gameframe').src=src+'?mode='+(m==='Examen'?'quiz':'review')+(uni?'&uni=1':'')+(devAct!=='off'?'&dev='+devAct:'');
+  const g=$('gamelayer');g.classList.add('on');requestAnimationFrame(()=>g.classList.add('vis'))}
+async function closeGame(){
+  const g=$('gamelayer');g.classList.remove('vis');await wait(350);g.classList.remove('on');
+  $('gameframe').src='about:blank';                      /* stops everything the game was playing */
+  $('gameframe').blur();window.focus();                   /* give keyboard focus back to the carousel (arrow keys) */
+  duckedByGame=false;if(resumeMusic)music.play().catch(()=>{});
+  play('d1');stage.classList.remove('down');await wait(900);busy=false}
+addEventListener('message',e=>{
+  if(e.source!==$('gameframe').contentWindow||!e.data||!gameOpen())return;
+  const m=e.data.sigamos;
+  if(m==='exit')closeGame();
+  else if(m==='duck'&&uni&&!music.paused){music.pause();duckedByGame=true}          /* game's letter / "try again" song: hush ours, like the game did for its own loop */
+  else if(m==='unduck'&&duckedByGame){duckedByGame=false;music.play().catch(()=>{})}});
+$('back').onclick=async()=>{const s=$('screen');s.classList.remove('vis');await wait(350);s.classList.remove('on');
+  play('d1');stage.classList.remove('down');await wait(900);busy=false};
+$('replay').onclick=()=>location.reload();
+</script>
+</body>
+</html>

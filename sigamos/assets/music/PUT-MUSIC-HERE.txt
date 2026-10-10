@@ -1,0 +1,12 @@
+Drop your songs in this folder (mp3, ogg, wav, m4a, flac, aac, opus).
+They show up in Ajustes > Biblioteca by themselves. No code to edit.
+
+Tips
+- Name a file "Artist - Title.mp3" to set the artist and title.
+  Otherwise the file name is the title and the artist is "Sigamos".
+- Want a cover? Put a picture with the same name next to the song
+  (Title.jpg / .png / .webp).
+
+If the songs do NOT appear (some hosting gives no folder listing),
+double-click update-music.bat (Windows) or update-music.command (Mac)
+in the main folder once. It writes playlist.json here, and the player reads that.

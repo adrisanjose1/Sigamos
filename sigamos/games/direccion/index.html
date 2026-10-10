@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sigamos — Listening Exam</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="listening.css">
+<script src="sprites.js"></script>
+<script src="sounds.js"></script>
+<script src="data.js"></script>
+</head>
+<body>
+<div id="app" class="app"></div>
+<script>
+const VOICES = window.VOICES, CMDS = window.CMDS, PEAKS = window.PEAKS, GIFS = window.GIFS;
+const VBY = Object.fromEntries(VOICES.map(v => [v.id, v]));
+const PRAISE = ["Sweet!","Correcto","Genial","ANG GALING","AWESOME","COOL","GREAT","Chido","QUE PADRE","PADRISIMO"];
+const praiseColors = ["#ff617f","#ff9f43","#62b66f","#a05cff","#4ca6ff","#ff4e7a","#f2b600"];
+const app = document.getElementById("app");
+const COLOR_CYCLE = ["c-red", "c-yellow", "c-blue"];
+
+function ls(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+const settings = { animations: true, duduIntro: false };
+let vs = ls("sigamosVoices") || { pool: ["man_a", "man_b", "woman_a", "woman_b"], single: false, singleVoice: "adri" };
+function saveVoices() { try { localStorage.setItem("sigamosVoices", JSON.stringify(vs)); } catch (e) {} }
+let mistakeData = ls("sigamosListenMistakes") || { done: false, list: [] };
+function saveMistakes() { try { localStorage.setItem("sigamosListenMistakes", JSON.stringify(mistakeData)); } catch (e) {} }
+
+let currentMode = null, currentIndex = 0, cycleIndex = 0, sessionCards = [], wrong = false, answered = false;
+let cardVoices = [], cardGifs = [], reviewVoice = "adri", holdAudio = false, inStudy = false;
+let runMistakes = [], runCorrect = 0, runAnswered = 0;
+let carHidden = false, introEl = null, introTimers = [], introT = [];
+let holdTitle = false, holdStack = false, railIntro = true, rail = null, lastRailIdx = null;
+const CD = { ready: 1.24, set: 1.8, go: 2.4, end: 3.1 };
+
+function shuffle(a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+
+/* ---------------- SFX ---------------- */
+const SFX = { place: ["audio/sfx/card-place-1.wav", "audio/sfx/card-place-2.mp3"], pick: ["audio/sfx/carousel-pick.mp3", "audio/sfx/carousel-pick-2.mp3"] };
+function sfx(list, vol) { try { const a = new Audio(list[Math.floor(Math.random() * list.length)]); a.volume = vol || 0.9; const q = a.play(); if (q && q.catch) q.catch(() => {}); } catch (e) {} }
+if (window.Sound) Sound.next = () => sfx(SFX.pick, 0.9);   // every card change uses the carousel sounds
+
+/* ---------------- CAPSULE WAVE VOICE SLIDER ---------------- */
+function makeRail(el, o) {
+  o = o || {};
+  const n = VOICES.length;
+  let p = o.start || 0, target = p, raf = 0, held = false, nameOn = false, nameT = 0, lastIdx = null;
+  const K = () => o.k || Math.min(0.66, Math.max(0.5, window.innerWidth / 700));
+  el.innerHTML = VOICES.map((v, k) =>
+    `<i class="cap pfp" data-k="${k}" data-f="0"><img src="${v.img}" alt=""></i><i class="cap fill" data-k="${k}" data-f="1"></i><i class="cap fill" data-k="${k}" data-f="2"></i>`).join("") + `<span class="cap-name"></span>`;
+  const caps = [...el.querySelectorAll(".cap")], nameEl = el.querySelector(".cap-name");
+  function layout() {
+    const k = K(), H = 5 * 220 * k, cy = H / 2, sp = 73 * k, b = held ? 1.22 : 1;
+    el.style.height = H + "px";
+    caps.forEach(c => {
+      const kk = +c.dataset.k, f = +c.dataset.f;
+      let off = kk + f / 3 - p; off = ((off + n / 2) % n + n) % n - n / 2;
+      const bell = Math.exp(-Math.pow(off / (held ? 1.05 : 0.85), 2));
+      const pf = f === 0;
+      const h = pf ? (96 + 14 * bell * b) * k : (34 + 4 * bell) * k;
+      const w = pf ? (80 + 76 * bell * b) * k : (50 + 36 * bell * b) * k;
+      const y = cy + off * 3 * sp - h / 2;
+      const fade = Math.max(0, Math.min(1, (n / 2 - Math.abs(off)) / 0.5));
+      c.style.top = y + "px"; c.style.height = h + "px"; c.style.width = (w + 20) + "px";
+      c.style.opacity = fade; c.style.zIndex = Math.round(bell * 10);
+      c.style.background = `rgb(${Math.round(251 - 11 * bell)},${Math.round(208 - 77 * bell)},${Math.round(220 - 61 * bell)})`;
+      if (pf) { const d = h - 14 * k, im = c.firstChild; im.style.width = im.style.height = d + "px"; }
+    });
+    const idx = ((Math.round(p) % n) + n) % n, near = Math.abs(p - Math.round(p));
+    if (lastIdx === null) lastIdx = idx;
+    else if (idx !== lastIdx) {   // voice switched: show the name, hide it again after 1s
+      lastIdx = idx; nameOn = true; clearTimeout(nameT);
+      nameT = setTimeout(() => { nameOn = false; layout(); }, 1000);
+    }
+    nameEl.textContent = VOICES[idx].name;
+    nameEl.style.opacity = !o.noName && nameOn && near < 0.3 ? 1 - near / 0.3 : 0;
+    nameEl.style.top = cy + "px";
+    nameEl.style.left = ((80 + 76 * b) * k + 10) + "px";
+    nameEl.style.fontSize = (46 * k) + "px";
+  }
+  function tick() {
+    p += (target - p) * 0.2;
+    if (Math.abs(target - p) < 0.003) { p = target; raf = 0; layout(); return; }
+    layout(); raf = requestAnimationFrame(tick);
+  }
+  const kick = () => { if (!raf) raf = requestAnimationFrame(tick); };
+  if (o.interactive) {
+    let y0 = 0, p0 = 0, moved = false;
+    el.addEventListener("pointerdown", e => { y0 = e.clientY; p0 = target; moved = false; held = true; el.classList.add("held"); try { el.setPointerCapture(e.pointerId); } catch (_) {} layout(); kick(); });
+    el.addEventListener("pointermove", e => { if (!held) return; const dy = y0 - e.clientY; if (Math.abs(dy) > 5) moved = true; target = p0 + dy / (219 * K()); kick(); });
+    const up = e => {
+      if (!held) return; held = false; el.classList.remove("held");
+      if (!moved) {
+        const t = document.elementFromPoint(e.clientX, e.clientY), c = t && t.closest && t.closest(".cap.pfp");
+        if (c) { let off = +c.dataset.k - p; off = ((off + n / 2) % n + n) % n - n / 2; target = Math.round(p + off); }
+      } else target = Math.round(target);
+      layout(); kick();
+      o.onCommit && o.onCommit(((Math.round(target) % n) + n) % n);
+    };
+    el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+  }
+  layout();
+  return {
+    layout,
+    go(i, instant) { target = i; if (instant) { p = i; layout(); } else kick(); },
+    hold(b) { held = b; el.classList.toggle("held", b); layout(); kick(); }
+  };
+}
+function positionRail() {
+  const r = document.getElementById("capRail"), s = document.getElementById("deckStack"), v = document.querySelector(".view");
+  if (!r || !s || !v) return;
+  const vr = v.getBoundingClientRect(), w = document.getElementById("wave");
+  let cy;
+  if (w) { const wr = w.getBoundingClientRect(); cy = wr.bottom + 16; }   // capsule sits just under the soundwave
+  else { const sr = s.getBoundingClientRect(); cy = sr.top + sr.height / 2; }
+  r.style.top = (cy - vr.top - r.offsetHeight / 2) + "px";
+  rail && rail.layout();
+}
+window.addEventListener("resize", () => { positionRail(); });
+
+/* ---------------- VOICE / AUDIO ---------------- */
+const voiceEl = new Audio();
+voiceEl.preload = "auto";
+const audioSrc = (v, n) => `audio/${v}/${String(n).padStart(2, "0")}.mp3`;
+function pickVoice() {
+  if (vs.single) return vs.singleVoice;
+  return vs.pool.length ? vs.pool[Math.floor(Math.random() * vs.pool.length)] : "man_a";
+}
+function getVoice() { return cardVoices[currentIndex] || (cardVoices[currentIndex] = pickVoice()); }
+function voiceNow() { return currentMode === "review" ? reviewVoice : getVoice(); }
+function setWave(p, playing, done) {
+  const w = document.getElementById("wave"); if (!w) return;
+  const bars = w.querySelectorAll("i");
+  bars.forEach((b, i) => b.classList.toggle("on", done || i / bars.length < p));
+  w.classList.toggle("playing", !!playing);
+}
+voiceEl.ontimeupdate = () => setWave(voiceEl.currentTime / (voiceEl.duration || 1), true, false);
+voiceEl.onended = () => setWave(1, false, true);
+function playClip(v, n) {
+  voiceEl.pause(); voiceEl.src = audioSrc(v, n); voiceEl.currentTime = 0;
+  setWave(0, true, false);
+  const p = voiceEl.play(); if (p && p.catch) p.catch(() => setWave(0, false, false));
+}
+function playVoice() { const c = sessionCards[currentIndex]; if (!c || !inStudy) return; playClip(voiceNow(), c.n); }
+function stopVoice() { try { voiceEl.pause(); voiceEl.currentTime = 0; } catch (e) {} }
+function waveHTML(v, n) {
+  const pk = PEAKS[v + "/" + n] || [];
+  return pk.map(p => `<i style="height:${6 + Math.round(p * 0.38)}px"></i>`).join("");
+}
+
+/* ---------------- NAV / CLEANUP ---------------- */
+function goHome() {
+  cleanupRun(); inStudy = false;
+  Sound.pageBack();
+  renderHome();
+}
+function cleanupRun() {
+  introTimers.forEach(clearTimeout); introTimers = []; introT.forEach(clearTimeout); introT = [];
+  introEl?.remove(); introEl = null; carHidden = false;
+  ["readyModal", "wrongOverlay", "confettiWrap", "menuScrim", "introPop"].forEach(id => document.getElementById(id)?.remove());
+  document.querySelectorAll(".fnf-banner").forEach(e => e.remove());
+  Sound.stopResultAudio(); stopVoice(); holdAudio = false;
+}
+
+/* ---------------- HOME ---------------- */
+function renderHome() {
+  app.innerHTML = `
+ <section class="hero">
+   <div class="hero-main">
+     ${renderCardFan("Sigamos", "big")}
+     <div class="hero-sub">Vamos Amore mio sigamos practicar</div>
+     <div class="mode-pick">
+       <button class="pick-word" onclick="start('review')" aria-label="Reseña">Reseña</button>
+       <span class="pick-o">o</span>
+       <button class="pick-word" onclick="start('quiz')" aria-label="Examen">examen</button><span class="pick-q">?</span>
+     </div>
+   </div>
+ </section>`;
+}
+
+/* ---------------- START ---------------- */
+function start(mode, skipIntro) {
+  currentMode = mode; currentIndex = 0; cycleIndex = 0;
+  sessionCards = shuffle(CMDS);
+  cardVoices = []; lastRailIdx = null;
+  cardGifs = sessionCards.map((_, i) => { let g; do { g = GIFS[Math.floor(Math.random() * GIFS.length)]; } while (i && g === cardGifs[i - 1] && GIFS.length > 1); return g; });
+  wrong = false; answered = false;
+  cleanupRun();
+  if (mode === "quiz") { runMistakes = []; runCorrect = 0; runAnswered = 0; }
+  Sound.pageForward();
+  holdAudio = mode === "quiz" || !skipIntro;
+  holdTitle = mode === "quiz" || !skipIntro;
+  holdStack = mode === "review" && !skipIntro;
+  railIntro = true;
+  inStudy = true;
+  renderStudy();
+  if (mode === "quiz") beginIntro(mode);
+  else if (!skipIntro) showReviewIntro();
+}
+
+function introLater(fn, ms) { introT.push(setTimeout(fn, ms)); }
+function showReviewIntro() {
+  const bars = Array.from({ length: 26 }, (_, i) => `<i style="height:${10 + Math.round(Math.abs(Math.sin(i * 0.9) * 30 + Math.cos(i * 0.4) * 10))}px;--i:${i}"></i>`).join("");
+  const s = document.createElement("div");
+  s.className = "pink-scrim"; s.id = "introPop";
+  s.innerHTML = `
+   <div class="intro-card" id="introCard">
+     <div class="scene" id="sc1">
+       <svg class="spk" viewBox="0 0 120 120" width="130" height="130" aria-hidden="true"><path d="M16 46h20l28-22v72L36 74H16z" fill="#ff6f92"/><path class="arc a1" d="M78 46q10 14 0 28"/><path class="arc a2" d="M90 34q20 26 0 52"/><path class="arc a3" d="M102 22q30 38 0 76"/></svg>
+       <div class="vol"><i></i><b></b></div>
+       <div class="big-word">Listen</div>
+     </div>
+     <div class="scene" id="sc2"><div class="demo-rail" id="demoRail"></div><img class="finger" src="img/hand-swipe.gif" alt=""><div class="demo-note">Hold &amp; slide</div></div>
+     <div class="scene" id="sc3"><div class="demo-wave">${bars}</div><div class="ripple"></div><img class="tapper" src="img/hand-click.gif" alt=""></div>
+     <div class="scene" id="sc4"><div class="sc4box"><div class="qd">¿Qué dijo?</div><div class="en">Turn right at the traffic light.</div><div class="me">¿Me explicas?</div><div class="es">Gira a la derecha en el semáforo cuando tu luz lo permita.</div></div></div>
+     <div class="intro-cap" id="introCap"></div>
+   </div>
+   <div class="listo-wrap" id="listoWrap"><button class="listo" onclick="startFlick()">Listo?</button><img class="listo-tap" src="img/hand-click.gif" alt=""></div>
+   <button class="skip" onclick="introSkip()">Skip ›</button>`;
+  document.body.appendChild(s);
+  const SC = [
+    { id: "sc1", cap: "Listen carefully…", ms: 2900 },
+    { id: "sc2", cap: "Hold and slide to change the voice", ms: 3700, run: demoSlide },
+    { id: "sc3", cap: "Tap the soundwave to hear it again", ms: 3100 },
+    { id: "sc4", cap: "¿Qué dijo? shows the English. ¿Me explicas? explains it.", ms: 4500 }
+  ];
+  let t = 350;
+  SC.forEach(sc => {
+    introLater(() => {
+      document.querySelectorAll("#introCard .scene").forEach(e => e.classList.remove("on"));
+      document.getElementById(sc.id)?.classList.add("on");
+      const cap = document.getElementById("introCap");
+      if (cap) { cap.classList.remove("show"); void cap.offsetWidth; cap.textContent = sc.cap; cap.classList.add("show"); }
+      sc.run && sc.run();
+    }, t);
+    t += sc.ms;
+  });
+  introLater(showListo, t);
+}
+function demoSlide() {
+  const el = document.getElementById("demoRail"); if (!el) return;
+  const r = makeRail(el, { k: 0.5, start: 0 });
+  introLater(() => r.hold(true), 450);
+  introLater(() => r.go(1), 650);
+  introLater(() => r.go(2), 1450);
+  introLater(() => r.hold(false), 2300);
+}
+function showListo() {
+  document.getElementById("introCard")?.classList.add("gone");
+  document.getElementById("listoWrap")?.classList.add("show");
+  document.querySelector("#introPop .skip")?.remove();
+}
+function introSkip() { introT.forEach(clearTimeout); introT = []; showListo(); }
+function popTitle() {
+  holdTitle = false;
+  const st = document.querySelector(".deck-stage");
+  if (st) { st.classList.remove("holding"); st.classList.add("ponte-pop"); }
+}
+function startFlick() {
+  document.getElementById("introPop")?.remove();
+  introT.forEach(clearTimeout); introT = [];
+  const stack = document.getElementById("deckStack"); if (!stack) return;
+  holdStack = false;
+  stack.classList.remove("hold-stack"); stack.classList.add("flicking");
+  [0, 600, 1200].forEach(d => introLater(() => sfx(SFX.place, 0.95), d + 330));
+  introLater(popTitle, 1500);
+  introLater(() => { stack.classList.remove("flicking"); holdAudio = false; playVoice(); }, 2050);
+}
+function closeReviewIntro() { startFlick(); }
+
+/* ---------------- STUDY SCREEN ---------------- */
+function diffHTML(w) {
+  return w.split(/\[(.*?)\]/).map((seg, i) => i % 2 ? `<span class="diff">${esc(seg)}</span>` : esc(seg)).join("");
+}
+function pickReviewVoice(id) {
+  reviewVoice = id;
+  const c = sessionCards[currentIndex];
+  const w = document.getElementById("wave"); if (w && c) w.innerHTML = waveHTML(id, c.n);
+  playVoice();
+}
+function revealEn() {
+  const b = document.getElementById("revBtn"); if (!b) return;
+  const c = sessionCards[currentIndex];
+  const t = document.getElementById("enText");
+  t.textContent = c.en; t.classList.add("show");
+  b.remove();
+  setTimeout(() => document.getElementById("expBtn")?.classList.add("show"), 500);
+}
+function revealEs() {
+  const b = document.getElementById("expBtn"); if (!b) return;
+  const t = document.getElementById("esText");
+  t.textContent = sessionCards[currentIndex].es; t.classList.add("show");
+  b.remove();
+  document.querySelector(".deck-card.current .face")?.classList.add("tight");
+}
+
+function renderStudy(advancing) {
+  const c = sessionCards[currentIndex];
+  if (!c) { finishStackEnding(); return; }
+  stopVoice(); answered = false;
+  const review = currentMode === "review";
+  const gif = cardGifs[currentIndex], v = voiceNow();
+  const backColor = COLOR_CYCLE[(cycleIndex + 2) % 3];
+  const midColor = COLOR_CYCLE[(cycleIndex + 1) % 3];
+  const frontColor = COLOR_CYCLE[cycleIndex % 3];
+  const wave = `<div class="wave" id="wave" role="button" tabindex="0" aria-label="Play again" onclick="playVoice()">${waveHTML(v, c.n)}</div>`;
+  let faces, controls;
+  if (review) {
+    faces = `<div class="face front review-face">
+      <img class="cat" src="${gif}" alt="">
+      ${wave}
+      <div class="reveal-zone">
+        <button class="reveal-btn" id="revBtn" onclick="revealEn()">¿Qué dijo?</button>
+        <div class="en-text" id="enText"></div>
+        <button class="explain-btn" id="expBtn" onclick="revealEs()">¿Me explicas?</button>
+        <div class="es-text" id="esText"></div>
+      </div></div>`;
+    controls = `<div class="control-row"><button class="continue" onclick="nextReview()">Siguiente ♥</button></div>`;
+  } else {
+    const opts = shuffle([{ ok: true, html: esc(c.en) }, ...c.wrong.map(w => ({ ok: false, html: diffHTML(w) }))]);
+    faces = `<div class="face front quiz-face">
+        <img class="cat" src="${gif}" alt="">
+        ${wave}
+        <div class="pill-list" id="quizOpts">${opts.map((o, i) =>
+          `<button class="pill" data-ok="${o.ok ? 1 : 0}" onclick="answerQuiz(this)"><b>${String.fromCharCode(65 + i)})</b> <span class="otext">${o.html}</span></button>`).join("")}</div></div>
+      <div class="face back quiz-back">
+        <img class="cat" src="${gif}" alt="">
+        <div class="label">${esc(c.en)}</div>
+        <div class="es-text show">${esc(c.es)}</div></div>`;
+    controls = `<div id="continueArea"></div><div class="tap-note">♥ audio ${currentIndex + 1}</div>`;
+  }
+  app.innerHTML = `<section class="view ${review ? "is-review" : "is-quiz"}">
+  <div class="topbar"><button class="back" onclick="goHome()">← Inicio</button><h2>${review ? "Reseña" : "Examen"}</h2>
+    <div class="top-right"><div class="progress"><span class="heart-progress">♥</span> ${currentIndex + 1}/${sessionCards.length}</div>
+    <button class="menu-btn" onclick="openMenu()" aria-label="Menu">☰</button></div></div>
+  <div class="capsule-rail${review ? " live" : ""}${railIntro ? " rail-in" : ""}" id="capRail"></div>
+  <div class="study">
+   <div class="deck-stage${holdTitle ? " holding" : ""}">
+    <div class="ponte-trucha" id="ponte"><span>Ponte</span><span>Trucha</span></div>
+    <div class="deck-stack${holdStack ? " hold-stack" : ""}" id="deckStack">
+      <div class="deck-card ${backColor}"><div class="mini-inner"></div></div>
+      <div class="deck-card ${midColor}"><div class="mini-inner"></div></div>
+      <div class="deck-card current ${frontColor}">${faces}</div>
+    </div>
+   </div>
+   ${controls}
+  </div>
+  <div id="burst" class="burst"></div>
+ </section>`;
+  railIntro = false;
+  const vIdx = Math.max(0, VOICES.findIndex(x => x.id === v)), nV = VOICES.length;
+  const fromIdx = (!review && lastRailIdx !== null) ? lastRailIdx : vIdx;
+  rail = makeRail(document.getElementById("capRail"), {
+    start: fromIdx,
+    interactive: review,
+    noName: !review,   // Examen: no names, the capsules just glide to the new voice
+    onCommit: i => { const id = VOICES[i].id; if (id !== reviewVoice) pickReviewVoice(id); }
+  });
+  positionRail();
+  if (!review && fromIdx !== vIdx) {   // glide the shortest way round, like someone sliding it
+    const d = ((vIdx - fromIdx + nV / 2) % nV + nV) % nV - nV / 2, r = rail, ix = currentIndex;
+    setTimeout(() => { if (rail === r) { r.hold(true); r.go(fromIdx + d); } }, 150);
+    setTimeout(() => { if (rail === r) r.hold(false); }, 950);
+  }
+  if (!review) lastRailIdx = vIdx;
+  if (advancing) animateDeckAdvance();
+  const idx = currentIndex;
+  setTimeout(() => { if (currentIndex === idx && inStudy && !holdAudio && !answered) playVoice(); }, advancing ? 700 : 350);
+}
+
+/* ---------------- EXAMEN ANSWER ---------------- */
+function answerQuiz(btn) {
+  if (wrong || answered) return;
+  answered = true;
+  const ok = btn.dataset.ok === "1", c = sessionCards[currentIndex];
+  runAnswered++; if (ok) runCorrect++;
+  const opts = document.getElementById("quizOpts");
+  opts.classList.add("answered");
+  opts.querySelectorAll(".pill").forEach(b => { b.disabled = true; if (b.dataset.ok === "1") b.classList.add("correct"); });
+  if (ok) {
+    wrong = false;
+    showPraise(); burst("💗", 20); burst("⭐", 20);
+    Sound.correct();
+    if (currentIndex === sessionCards.length - 1) { finishStackEnding(); return; }
+    if (settings.animations) {
+      cycleIndex++;
+      document.querySelector(".deck-card.current")?.classList.add("tumble-out");
+    }
+    setTimeout(() => Sound.next(), 300);
+    setTimeout(() => { currentIndex++; renderStudy(settings.animations); }, settings.animations ? 1250 : 350);
+  } else {
+    wrong = true; btn.classList.add("wrong");
+    if (!runMistakes.some(m => m.n === c.n)) runMistakes.push({ n: c.n, chosen: btn.querySelector(".otext").textContent, voice: getVoice() });
+    Sound.wrong();
+    burst("🥹", 10); burst("🩵", 10); burst("🤍", 10);
+    document.querySelector(".study")?.classList.add("wrong-active");
+    document.querySelector(".deck-card.current")?.classList.add("wrong-state");
+    const overlay = document.createElement("div");
+    overlay.className = "wrong-overlay"; overlay.id = "wrongOverlay";
+    document.body.appendChild(overlay);
+    document.getElementById("continueArea").innerHTML = `<button class="continue" onclick="checkAnswer()">Check the right answer?</button>`;
+  }
+}
+
+/* ---------------- MENU ---------------- */
+function openMenu() {
+  if (document.getElementById("menuScrim")) return;
+  const s = document.createElement("div");
+  s.className = "pink-scrim"; s.id = "menuScrim";
+  s.onclick = e => { if (e.target === s) closeMenu(); };
+  s.innerHTML = `<div class="pop-card menu-card" id="menuCard"></div>`;
+  document.body.appendChild(s);
+  renderMenu();
+}
+function closeMenu() { document.getElementById("menuScrim")?.remove(); }
+function renderMenu() {
+  const card = document.getElementById("menuCard"); if (!card) return;
+  const quiz = currentMode === "quiz";
+  const now = quiz ? getVoice() : null;
+  const voices = quiz ? `
+    <h3>Voices</h3>
+    <div class="voice-list">${VOICES.map(v => {
+      const on = vs.single ? v.id === vs.singleVoice : vs.pool.includes(v.id);
+      return `<label class="voice-row${on ? " on" : ""}"><img src="${v.img}" alt=""><span class="vname">${esc(v.name)}${v.id === now ? "<em>now playing</em>" : ""}</span><input type="checkbox" ${on ? "checked" : ""} onchange="toggleVoice('${v.id}')"></label>`;
+    }).join("")}</div>
+    <label class="switch-row"><span><b>One voice only</b><small>${vs.single ? "Pick the voice you want for the whole exam." : "Off: voices are picked at random."}</small></span>
+      <span class="switch"><input type="checkbox" ${vs.single ? "checked" : ""} onchange="toggleSingle()"><i></i></span></label>` : "";
+  card.innerHTML = `<h2>Menu</h2>${voices}
+    <div class="menu-actions"><button class="secondary" onclick="menuHome()">⌂ Inicio</button>${quiz ? "" : `<button class="secondary" onclick="menuExam()">Test my knowledge</button>`}</div>
+    <div class="menu-actions"><button class="secondary" onclick="menuRestart()">↻ Restart</button><button class="secondary" onclick="menuMistakes()">Review mistakes</button></div>
+    <button class="primary" onclick="closeMenu()">Close</button>`;
+}
+function toggleVoice(id) {
+  if (vs.single) vs.singleVoice = id;
+  else if (vs.pool.includes(id)) { if (vs.pool.length > 1) vs.pool = vs.pool.filter(x => x !== id); }
+  else vs.pool = VOICES.map(v => v.id).filter(x => x === id || vs.pool.includes(x));
+  saveVoices(); renderMenu();
+}
+function toggleSingle() {
+  vs.single = !vs.single;
+  if (vs.single) vs.singleVoice = VOICES[0].id;
+  saveVoices(); renderMenu();
+}
+function menuHome() { closeMenu(); goHome(); }
+function menuExam() { closeMenu(); cleanupRun(); start("quiz"); }
+function menuRestart() { closeMenu(); start(currentMode, true); }
+function menuMistakes() { closeMenu(); stopVoice(); document.getElementById("wrongOverlay")?.remove(); renderMistakes(inStudy ? "study" : "home"); }
+
+/* ---------------- MISTAKES ---------------- */
+function openMistakes() { Sound.pageForward(); renderMistakes("home"); }
+function backFromMistakes(to) {
+  stopVoice();
+  if (to === "study") { wrong = false; document.getElementById("wrongOverlay")?.remove(); renderStudy(); } else goHome();
+}
+function renderMistakes(backTo) {
+  const live = backTo === "study" && currentMode === "quiz";
+  const list = live ? runMistakes : mistakeData.list;
+  const items = list.map(m => ({ m, c: CMDS.find(x => x.n === m.n) })).filter(x => x.c);
+  const never = !live && !mistakeData.done;
+  inStudy = backTo === "study";
+  app.innerHTML = `<section class="mistakes-screen">
+  <div class="topbar"><button class="back" onclick="backFromMistakes('${backTo}')">← ${backTo === "study" ? "Volver" : "Inicio"}</button><h2>Your Mistakes</h2><div class="progress">${items.length}</div></div>
+  ${items.length ? `<div class="mistake-list">${items.map(({ m, c }) => `
+    <article class="mistake-card">
+      <button class="mk-play" onclick="playClip('${m.voice}', ${c.n})" aria-label="Play">▶ ${esc(VBY[m.voice]?.name || "")}</button>
+      <div class="mk-chose"><span>You chose</span> <s>${esc(m.chosen)}</s></div>
+      <div class="mk-right"><span>Right answer</span> <strong>${esc(c.en)}</strong></div>
+      <div class="mk-en">${esc(c.es)}</div>
+    </article>`).join("")}</div>`
+  : never ? `<div class="mistake-empty"><p>No mistakes yet. Take the Examen first and they’ll show up here.</p></div>`
+  : `<div class="mistake-empty"><div id="endBurst" class="burst"></div><div class="picudo">Que Picudo!</div><p>You don’t have anymore mistakes. You’ll pass this test 100%!</p></div>`}
+ </section>`;
+  if (!items.length && !never) setTimeout(() => burstEnd(), 80);
+}
+
+/* ---------------- END OF SESSION ---------------- */
+function finishStackEnding() {
+  if (currentMode === "quiz") commitMistakes();
+  const stack = document.getElementById("deckStack");
+  const after = () => { currentMode === "review" ? showReadyPopup() : showExamResult(); };
+  if (!stack) { after(); return; }
+  stack.classList.add("end-2");
+  setTimeout(() => stack.classList.add("end-1"), 520);
+  setTimeout(() => stack.classList.add("end-0"), 1040);
+  setTimeout(after, 1540);
+}
+
+function showReadyPopup() {
+  document.getElementById("readyModal")?.remove();
+  const m = document.createElement("div");
+  m.className = "modal ready-modal"; m.id = "readyModal";
+  m.innerHTML = `<div class="modal-box ready-box">
+    <h2>Ready to Test your Knowledge?</h2>
+    <div class="modal-actions"><button class="secondary" onclick="readyNo()">Not Yet</button><button class="primary" onclick="readyYes()">Yes</button></div>
+  </div>`;
+  document.body.appendChild(m);
+}
+function readyYes() { document.getElementById("readyModal")?.remove(); start("quiz"); }
+function readyNo()  { document.getElementById("readyModal")?.remove(); goHome(); }
+
+// After Examen: which page you get depends on the score (whole percent, rounded DOWN).
+//   100%      → "You Got This!"  yey + mexican music, envelope UNLOCKED (+ Challenge Mode unlocks)
+//   71–99%    → "You're Close!"  yey + mexican music, envelope locked
+//   below 71% → "Try again"      only Volver Volver plays, envelope locked
+function showExamResult() {
+  const total = sessionCards.length, wrongN = runMistakes.length;
+  const pct = devMode ? 100 : Math.floor((total - wrongN) / total * 100);
+  const kind = pct === 100 ? "win" : (pct >= 71 ? "close" : "cry");
+  if (pct === 100) { progress.letterUnlocked = true; progress.challengeUnlocked = true; saveProgress(); }
+  showNote(kind, pct);
+  if (kind === "cry") Sound.startSadMusic(); else Sound.finishCelebration();
+}
+function readyNo()  { document.getElementById("readyModal")?.remove(); goHome(); }
+
+// After Examen: which page you get depends on the score (whole percent, rounded DOWN).
+//   100%      → "You Got This!"  yey + mexican music, envelope UNLOCKED (+ Challenge Mode unlocks)
+//   71–99%    → "You're Close!"  yey + mexican music, envelope locked
+//   below 71% → "Try again"      only Volver Volver plays, envelope locked
+function showExamResult() {
+  const total = sessionCards.length, wrongN = runMistakes.length;
+  const pct = devMode ? 100 : Math.floor((total - wrongN) / total * 100);
+  const kind = pct === 100 ? "win" : (pct >= 71 ? "close" : "cry");
+  if (pct === 100) { progress.letterUnlocked = true; progress.challengeUnlocked = true; saveProgress(); }
+  showNote(kind, pct);
+  if (kind === "cry") Sound.startSadMusic(); else Sound.finishCelebration();
+}
+
+function showExamResult() {
+  const total = sessionCards.length, wrongN = runMistakes.length;
+  const pct = Math.floor((total - wrongN) / total * 100);
+  const kind = pct === 100 ? "win" : (pct >= 71 ? "close" : "cry");
+  showNote(kind, pct);
+  if (kind === "cry") Sound.startSadMusic(); else Sound.finishCelebration();
+}
+function commitMistakes() { mistakeData = { done: true, list: runMistakes }; saveMistakes(); }
+
+function showNote(kind, pct) {
+  kind = kind || "win";
+  const title = kind === "cry" ? "You have to try Again Baby! i know you can!"
+              : kind === "close" ? "You’re Close! A Few more Amore!!" : "You Got This!";
+  inStudy = false;
+  app.innerHTML = `<section class="note-screen">
+  <button class="note-back" onclick="goHome()">← Inicio</button>
+  <div class="note-card">
+    ${renderCardFan(title, kind === "win" ? "" : "long")}
+    ${renderResultMascot(kind)}
+    ${pct != null ? `<div class="score-line">Score: ${pct}%</div>` : ""}
+    <p>Te Amo Mi Alora</p>
+    ${runMistakes.length ? `<button class="secondary" onclick="openMistakes()">Review mistakes</button>` : ""}
+  </div>
+ </section>`;
+}
+
+/* ---------------- EXAMEN INTRO (FNF countdown + Dudu) ---------------- */
+function beginIntro(mode) {
+  introEl = document.createElement("div");
+  introEl.className = "intro-scrim";
+  document.body.appendChild(introEl);
+  Sound.countdown();
+  introAt(() => fnfWord("¡Preparados!", "ready"), CD.ready);
+  introAt(() => fnfWord("Listos", "set"), CD.set);
+  introAt(() => fnfWord("¡GO!", "go"), CD.go);
+  introAt(() => endIntro(), CD.end);
+}
+function endIntro() {
+  if (!introEl) return;
+  const el = introEl; introEl = null;
+  el.classList.add("out");
+  setTimeout(() => el.remove(), 500);
+  popTitle();
+  holdAudio = false;
+  setTimeout(() => { if (inStudy && !answered) playVoice(); }, 500);
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m]));
+}
+
+function showPraise() {
+  const p = document.createElement("div"); p.className = "praise";
+  p.textContent = PRAISE[Math.floor(Math.random() * PRAISE.length)];
+  p.style.color = praiseColors[Math.floor(Math.random() * praiseColors.length)];
+  document.querySelector(".study").appendChild(p);
+  setTimeout(() => p.remove(), 700);
+}
+
+function burst(symbol, n) {
+  if (!settings.animations) return;
+  const root = document.getElementById("burst"); if (!root) return;
+  for (let i = 0; i < n; i++) {
+    const x = document.createElement("span"); x.className = "particle"; x.textContent = symbol;
+    x.style.left = (50 + Math.random() * 10 - 5) + "%";
+    x.style.top = (42 + Math.random() * 12 - 6) + "%";
+    x.style.setProperty("--dx", (Math.random() * 360 - 180) + "px");
+    x.style.setProperty("--dy", (Math.random() * 460 - 230) + "px");
+    x.style.setProperty("--r", (Math.random() * 540 - 270) + "deg");
+    x.style.animationDelay = (Math.random() * 0.15) + "s";
+    root.appendChild(x);
+    setTimeout(() => x.remove(), 1300);
+  }
+}
+
+function burstEnd() {
+  const root = document.getElementById("endBurst"); if (!root) return;
+  for (let i = 0; i < 42; i++) {
+    const x = document.createElement("span"); x.className = "particle";
+    x.textContent = ["🎉", "💗", "⭐", "✨"][i % 4];
+    x.style.left = (50 + Math.random() * 8 - 4) + "%"; x.style.top = "48%";
+    x.style.setProperty("--dx", (Math.random() * 900 - 450) + "px");
+    x.style.setProperty("--dy", (Math.random() * 650 - 250) + "px");
+    x.style.setProperty("--r", (Math.random() * 720 - 360) + "deg");
+    root.appendChild(x);
+  }
+}
+
+function animateDeckAdvance() {
+  const stack = document.getElementById("deckStack");
+  const els = stack ? [...stack.querySelectorAll(".deck-card")] : [];
+  if (els.length !== 3) return;
+  const [back, mid, front] = els;
+  const start = [
+    [back,  "13deg", "112vh"],   // returning card: below the screen
+    [mid,   "-7deg", "18px"],    // was the back card
+    [front, "5deg",  "9px"],     // was the middle card
+  ];
+  els.forEach(el => el.style.transition = "none");
+  start.forEach(([el, rot, y]) => { el.style.setProperty("--rot", rot); el.style.setProperty("--y", y); });
+  stack.classList.add("advancing");
+  void stack.offsetWidth; // commit the starting poses
+  const ease = "transform .8s cubic-bezier(.22,1,.36,1)";
+  back.style.transition = "transform 1.05s cubic-bezier(.2,.8,.25,1)";
+  mid.style.transition = ease; front.style.transition = ease;
+  start.forEach(([el]) => { el.style.removeProperty("--rot"); el.style.removeProperty("--y"); });
+  setTimeout(() => els.forEach(el => { el.style.transition = ""; }), 1150);
+}
+
+function nextReview() {
+  if (currentIndex === sessionCards.length - 1) { finishStackEnding(); return; }
+  Sound.next();
+  if (!settings.animations) { currentIndex++; renderStudy(); return; }
+  cycleIndex++;
+  document.querySelector(".deck-card.current")?.classList.add("tumble-out");
+  setTimeout(() => { currentIndex++; renderStudy(true); }, 1050);
+}
+
+function checkAnswer() {
+  document.querySelector(".deck-card.current")?.classList.add("flipped");
+  document.getElementById("continueArea").innerHTML = `<button class="continue" onclick="continueWrong()">Continuar 🔔</button>`;
+}
+
+function continueWrong() {
+  wrong = false; burst("⭐", 14); Sound.service();
+  document.querySelector(".study")?.classList.remove("wrong-active");
+  document.querySelector(".deck-card.current")?.classList.remove("wrong-state");
+  document.getElementById("wrongOverlay")?.remove();
+  document.querySelectorAll(".pill").forEach(b => b.disabled = true);
+  document.getElementById("continueArea").innerHTML = `<button class="continue" onclick="nextAfterWrong()">Siguiente ♥</button>`;
+}
+
+function nextAfterWrong() {
+  if (currentIndex === sessionCards.length - 1) { finishStackEnding(); return; }
+  Sound.next();
+  if (settings.animations) {
+    cycleIndex++;
+    document.querySelector(".deck-card.current")?.classList.add("tumble-out");
+  }
+  setTimeout(() => { currentIndex++; renderStudy(settings.animations); }, settings.animations ? 1050 : 120);
+}
+
+function fnfHTML(text) { return `<b class="fo">${text}</b><b class="ff">${text}</b>`; }
+
+// FNF-style pop-in word (replaces the previous one).
+function fnfWord(text, cls) {
+  if (!introEl) return;
+  introEl.querySelector(".fnf-word")?.remove();
+  const w = document.createElement("div");
+  w.className = "fnf-word " + cls; w.innerHTML = fnfHTML(text);
+  introEl.appendChild(w);
+}
+
+function fnfWord(text, cls) {
+  if (!introEl) return;
+  introEl.querySelector(".fnf-word")?.remove();
+  const w = document.createElement("div");
+  w.className = "fnf-word " + cls; w.innerHTML = fnfHTML(text);
+  introEl.appendChild(w);
+}
+
+function duduDrive() {
+  if (!introEl) return;
+  introEl.querySelector(".fnf-word")?.remove();
+  introEl.insertAdjacentHTML("beforeend", renderBigCar());
+  introAt(endIntro, 2.5);
+}
+
+function introAt(fn, sec) { introTimers.push(setTimeout(fn, sec * 1000)); }
+
+function beginIntro(mode) {
+  const dudu = mode === "quiz" && settings.duduIntro;
+  carHidden = dudu;
+  document.querySelector(".deck-car")?.classList.toggle("car-hidden", dudu);
+  introEl = document.createElement("div");
+  introEl.className = "intro-scrim";
+  document.body.appendChild(introEl);
+  Sound.countdown();
+  introAt(() => fnfWord("¡Preparados!", "ready"), CD.ready);
+  introAt(() => fnfWord("Listos", "set"), CD.set);
+  introAt(() => fnfWord("¡GO!", "go"), CD.go);
+  introAt(() => (mode === "challenge" ? hellIntro() : (dudu ? duduDrive() : endIntro())), CD.end);
+}
+
+document.addEventListener("click", () => window.Sound && Sound.startBackgroundMusic());
+renderHome();
+</script>
+<script src="bridge.js"></script>
+</body>
+</html>

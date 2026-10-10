@@ -1,0 +1,612 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Caveat:wght@500;600;700&family=Orbitron:wght@700;900&family=Luckiest+Guy&display=swap');:root{
+  --pink:#ff86aa; --pink2:#ffd7e3; --hot:#ff5f80; --red:#ff3e48;
+  --yellow:#ffd94f; --blue:#42b6ff; --ink:#40333a; --paper:#fffdfd;
+  --shadow:0 18px 40px rgba(130,55,85,.16);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{overflow-x:hidden}
+body{
+  margin:0; color:var(--ink); font-family:"Baloo 2",system-ui,sans-serif;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(6.3,8.4) scale(0.4)'/%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(51.3,53.4) scale(0.4)'/%3E%3C/svg%3E");
+  background-size:110px 110px;
+  background-repeat:repeat;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app{max-width:1080px;margin:auto;min-height:100vh;padding:18px 18px 70px}
+.hero{
+  min-height:calc(100vh - 36px); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center;
+}
+.hero h1{font-size:clamp(2.1rem,6vw,4rem);margin:4px 0 0;color:#ff6689;font-weight:800}
+.hero-sub{font-size:1.05rem;margin:0 0 12px}
+.mode-area{width:min(720px,100%);display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+.mode-btn{
+  border:0;background:#fff;border-radius:30px;padding:18px 16px;
+  box-shadow:var(--shadow); color:var(--ink); position:relative; overflow:hidden;
+  transition:.2s transform,.2s box-shadow;
+}
+.mode-btn:hover{transform:translateY(-4px);box-shadow:0 22px 44px rgba(130,55,85,.2)}
+.mode-btn .stack{height:90px;position:relative;margin-bottom:42px}
+.card-mini{position:absolute;width:76px;height:94px;border-radius:13px;left:50%;top:0;border:6px solid}
+.card-mini.one{transform:translateX(-65px) rotate(-17deg);background:#8bd2ff;border-color:#36aff2}
+.card-mini.two{transform:translateX(-38px) rotate(-4deg);background:#fff0ad;border-color:#ffd743}
+.card-mini.three{transform:translateX(-10px) rotate(16deg);background:#ff8c9c;border-color:#ff3d49}
+.mode-btn strong{font-size:1.35rem;display:block;margin-top:16px}
+.mode-btn small{display:block;color:#8c737d}
+.scroll-hint{margin-top:22px;color:#aa7a8b;font-size:.95rem}
+.controls{
+  margin-top:30px;background:rgba(255,255,255,.9);border:2px solid #ffd2df;
+  border-radius:28px;padding:22px;box-shadow:var(--shadow)
+}
+.controls h2{margin:0 0 12px;font-size:1.5rem;color:#f05f83}
+.control-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.toggle{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff4f7;
+  border-radius:18px;cursor:pointer
+}
+.toggle input{width:20px;height:20px;accent-color:#ff6f95}
+.special{
+  margin-top:14px;display:inline-flex;align-items:center;gap:8px;border:0;
+  background:none;color:#ff5c82;text-decoration:underline;font-weight:700;font-size:1.05rem
+}
+.manage{margin-top:18px;padding-top:18px;border-top:2px dashed #ffd2df}
+.manage h3{margin:0 0 4px}.manage p{margin:0 0 12px;color:#866e78}
+.add-btn,.primary{
+  border:0;border-radius:18px;background:#ff6c90;color:white;padding:12px 18px;
+  font-weight:800;box-shadow:0 8px 18px rgba(255,108,144,.24)
+}
+.card-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:15px}
+.manage-card{background:white;border:2px solid #ffe0e8;border-radius:20px;padding:12px;position:relative}
+.manage-card img{width:100%;height:140px;object-fit:contain;background:#fff8fa;border-radius:13px}
+.manage-card .mc-title{font-weight:800;margin-top:7px}.manage-card .mc-en{color:#8c7a82}
+.actions{display:flex;gap:7px;margin-top:9px}.actions button{
+  border:0;border-radius:12px;padding:7px 10px;background:#fff0f4;color:#d84f71;font-weight:700
+}
+.view{min-height:100vh;padding:20px 0}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.back{border:0;background:#fff;border-radius:15px;padding:9px 13px;box-shadow:0 5px 14px #eecbd5}
+.topbar h2{margin:0;color:#f15e82;font-size:1.8rem}
+.progress{font-weight:700;color:#9a7885}
+.study{display:flex;flex-direction:column;align-items:center;gap:15px}
+.flash-wrap{width:min(430px,92vw);height:570px;perspective:1200px;position:relative}
+.flashcard{
+  width:100%;height:100%;position:relative;transform-style:preserve-3d;
+  transition:transform .55s ease, width .45s, filter .35s, background .35s;
+}
+.flashcard.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:30px;
+  border:8px solid #ff6f92;background:#fff;box-shadow:var(--shadow);padding:18px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden
+}
+.face.back{transform:rotateY(180deg);border-color:#ffd64d}
+.face img{width:88%;height:58%;object-fit:contain;border-radius:18px}
+.face .label{font-size:1.45rem;font-weight:800;margin-top:10px}
+.face .translation{color:#888;font-size:1.15rem}
+.tap-note{color:#a47e8b}
+.quiz-options{width:min(620px,94vw);display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.option{
+  border:3px solid #ffc4d3;background:#fff;border-radius:17px;padding:11px;
+  text-align:left;font-weight:700;transition:.15s transform,.15s background
+}
+.option:hover{transform:translateY(-2px);background:#fff2f6}
+.option.correct{border-color:#ffd13d;background:#fff5b8}
+.option.wrong{background:#ffbcd9;border-color:#ff7b9b}
+.continue{
+  border:0;border-radius:17px;background:#ff6689;color:#fff;padding:11px 24px;
+  font-weight:800;box-shadow:0 8px 18px rgba(255,102,137,.25)
+}
+.praise{
+  position:absolute;left:50%;top:45%;transform:translate(-50%,-50%) rotate(-5deg);
+  font-family:"Luckiest Guy",cursive;font-size:clamp(2.5rem,10vw,5rem);color:#fff8ec;
+  text-shadow:3px 4px 0 #ff8a6b,5px 6px 0 #ff5f5f,7px 8px 12px rgba(0,0,0,.15);
+  -webkit-text-stroke:2px #ff5f5f;
+  z-index:8;
+  pointer-events:none;animation:praiseIn .7s both
+}
+@keyframes praiseIn{0%{opacity:0;transform:translate(-50%,-20%) scale(.4) rotate(-15deg)}
+70%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(-4deg)}
+100%{transform:translate(-50%,-50%) scale(1)}}
+.tumble{animation:tumble .72s cubic-bezier(.5,-.2,.7,1) forwards}
+@keyframes tumble{to{transform:translate(120px,700px) rotate(48deg);opacity:0}}
+/* Wrong answer: dim everything EXCEPT the card (a fixed pink scrim
+   sits just below the card in z-order — the card looks "spared"
+   because it renders on top of the dim, not because it's un-dimmed
+   itself), grow the card instead of shaking it, and hide the answer
+   grid so "Continuar" lands directly under the (now bigger) card —
+   this matters most on small phone screens, where the old side-shake
+   + still-visible option grid pushed the continue button off-screen. */
+.wrong-overlay{position:fixed;inset:0;background:rgba(255,140,156,.5);z-index:60;pointer-events:none}
+.study.wrong-active .quiz-options{display:none}
+.study.wrong-active .deck-stage{position:relative;z-index:61}
+.study.wrong-active #continueArea{position:relative;z-index:61;margin-top:16px}
+.wrong-state{transform:scale(1.12);transition:transform .32s cubic-bezier(.34,1.56,.64,1);z-index:22}
+.stars-off .burst,.hearts-off .burst{display:none}
+.burst{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.particle{position:absolute;font-size:25px;animation:pop 1s ease-out forwards}
+@keyframes pop{0%{transform:translate(0,0) scale(.2);opacity:0}
+15%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(1.2);opacity:0}}
+.end-screen,.note-screen{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;position:relative
+}
+.end-title{font-family:"Luckiest Guy",cursive;font-size:clamp(4rem,14vw,8rem);color:#fff8ec;
+ text-shadow:4px 5px 0 #ff8a6b,7px 8px 0 #ff5f5f;
+ -webkit-text-stroke:2px #ff5f5f;
+ animation:popTitle .8s both}
+@keyframes popTitle{0%{opacity:0;transform:scale(.2) rotate(-10deg)}75%{transform:scale(1.15)}100%{transform:scale(1)}}
+.end-screen p{font-size:1.25rem}.note-card{background:#fff;border:3px solid #ffd0dd;border-radius:30px;
+ padding:35px;box-shadow:var(--shadow);max-width:600px}
+.note-card h1{font-family:"Luckiest Guy",cursive;color:#fff8ec;font-size:clamp(3rem,10vw,5.5rem);margin:0;
+ text-shadow:3px 4px 0 #ff8a6b,5px 6px 0 #ff5f5f;
+ -webkit-text-stroke:2px #ff5f5f}
+.note-card p{font-size:1.35rem;line-height:1.5}
+.note-card .heart{font-size:4rem}
+.note-back{
+  position:fixed;top:14px;left:14px;z-index:20;border:0;border-radius:15px;
+  background:rgba(255,255,255,.9);color:#d84f71;padding:9px 13px;
+  box-shadow:0 5px 14px rgba(130,55,85,.18);font-weight:800;
+}
+.modal{
+ position:fixed;inset:0;background:rgba(60,35,45,.45);display:flex;align-items:center;justify-content:center;
+ padding:15px;z-index:100
+}
+.modal-box{background:#fff;border-radius:28px;width:min(620px,100%);padding:22px;max-height:90vh;overflow:auto}
+.modal-box h2{margin-top:0;color:#ed5f83}.form-grid{display:grid;gap:11px}
+.form-grid label{font-weight:700}.form-grid input[type=text]{width:100%;padding:11px;border:2px solid #ffd2df;border-radius:13px}
+.upload{
+ border:2px dashed #ff9db6;border-radius:18px;padding:22px;text-align:center;background:#fff8fa
+}
+.upload img{max-height:190px;max-width:100%;object-fit:contain;border-radius:12px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.secondary{border:0;background:#f8e9ee;border-radius:15px;padding:10px 16px;font-weight:700}
+.empty{padding:20px;text-align:center;color:#977985;background:#fff7f9;border-radius:17px}
+@media(max-width:600px){
+ .app{padding:10px 10px 45px}.mode-area{grid-template-columns:1fr}.hero-art{width:96vw}
+ .flash-wrap{height:500px}.quiz-options{grid-template-columns:1fr}.face img{height:55%}
+}
+
+/* Mobile deck refinements */
+.deck-stage{width:min(430px,94vw);height:600px;position:relative;margin-top:22px}
+.deck-stack{position:absolute;left:50%;top:70px;width:100%;height:510px;transform:translateX(-50%);perspective:1200px}
+.deck-card{
+ position:absolute;left:50%;top:0;width:88%;height:100%;border-radius:30px;
+ border:7px solid #ff6f92;background:#fff;box-shadow:0 15px 30px rgba(130,55,85,.15);
+ transform:translateX(-50%) rotate(var(--rot)) translateY(var(--y));transition:.45s ease;
+}
+.deck-card:nth-child(1){--rot:-7deg;--y:18px}
+.deck-card:nth-child(2){--rot:5deg;--y:9px}
+.deck-card:nth-child(3){--rot:-1deg;--y:0px}
+/* Color is assigned per-render by JS (cycleIndex in index.html) via
+   these classes instead of being tied to stack position, so the front
+   card's color actually rotates red→yellow→blue→red as you advance. */
+.deck-card.c-red{border-color:#ff6f92}
+.deck-card.c-yellow{border-color:#ffd94f}
+.deck-card.c-blue{border-color:#42b6ff}
+.deck-card.c-red .face{border-color:#ff6f92}
+.deck-card.c-yellow .face{border-color:#ffd94f}
+.deck-card.c-blue .face{border-color:#42b6ff}
+.deck-card .mini-inner{height:100%;border-radius:23px;background:#fff9fb}
+.deck-card.current{z-index:4}
+/* Solid tumble-away animation for the front card on every advance —
+   applied directly via JS (tumble-out class) instead of relying on the
+   generic .45s transition, so it reads as one deliberate fall instead
+   of a fade. */
+/* No fade (a fading card turns into a pale/white wash over the deck): the card
+   tumbles all the way off the bottom of the screen at full opacity, and the
+   same card then slides back up as the last card of the deck. */
+@keyframes tumbleAway{
+  0%{transform:translateX(-50%) translateY(0) rotate(-1deg)}
+  25%{transform:translateX(-50%) translateY(14px) rotate(9deg)}
+  100%{transform:translateX(-50%) translateY(115vh) rotate(78deg)}
+}
+
+.deck-card.current.tumble-out{animation:tumbleAway 1.05s cubic-bezier(.42,.05,.75,.55) forwards;z-index:20}
+.deck-stack.end-2 .deck-card:nth-child(3){transform:translateX(-50%) rotate(-1deg) translateY(360px);opacity:0}
+.deck-stack.end-1 .deck-card:nth-child(2){transform:translateX(-50%) rotate(5deg) translateY(330px);opacity:0}
+.deck-stack.end-0 .deck-card:nth-child(1){transform:translateX(-50%) rotate(-7deg) translateY(330px);opacity:0}
+.deck-stack .active-face{position:absolute;inset:0;z-index:10}
+.deck-stack .face{z-index:10}
+.heart-progress{color:#ff6689;font-size:1.1rem;white-space:nowrap}
+@media(max-width:600px){
+ .app{padding:8px 10px 42px}
+ .hero{min-height:100svh;padding:10px 0 25px}
+ .hero-art{width:min(95vw,560px);max-height:67svh}
+ .mode-area{grid-template-columns:1fr;gap:12px;width:min(430px,100%)}
+ .mode-btn{padding:12px 14px}
+ .mode-btn .stack{height:68px;margin-bottom:34px}
+ .deck-stage{height:555px}
+ .deck-stack{height:470px;top:70px}
+ .deck-bubu{top:-5px;width:105px;height:88px}
+ .flash-wrap{height:auto;width:100%;perspective:none}
+ .study{gap:8px}
+ .quiz-options{width:100%;gap:8px}
+ .option{padding:10px 9px;font-size:.98rem}
+ .controls{margin-top:18px;padding:17px}
+ .control-row{align-items:flex-start}
+ .toggle{width:100%}
+ .topbar h2{font-size:1.55rem}
+}
+
+/* Exact visual reference + animated bear */
+/* NOTE: .title-container and .canva-sticker-title below aren't used by
+   any element in index.html (looks like a leftover paste). Safe to
+   delete, kept here in case you still need it for something. */
+.title-container{
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aa7a8b
+}
+
+.canva-sticker-title {
+  font-family: "Luckiest Guy", cursive;
+  font-size: clamp(2rem, 6vw, 4.4rem);
+  color: #fff8ec;
+}
+
+/* =====================================================================
+   HOME: handwritten "Reseña o examen?" (replaces the two boxed buttons)
+   ===================================================================== */
+.hero-sub{font-size:.95rem;margin:2px 0 4px;color:#7a5c69}
+.mode-pick{
+  margin-top:8px; font-family:"Caveat","Segoe Script","Bradley Hand",cursive;
+  font-size:clamp(2.6rem,10vw,3.8rem); font-weight:700; line-height:1.1; color:#ff5f80;
+  display:flex; align-items:baseline; justify-content:center; gap:.3em; flex-wrap:wrap;
+}
+.pick-word{
+  border:0; background:none; padding:0 .05em; font:inherit; color:#ff5f80; cursor:pointer;
+  text-decoration:underline wavy #ffb3c6; text-decoration-thickness:2px; text-underline-offset:.14em;
+  transition:transform .2s, color .2s;
+}
+.pick-word:hover,.pick-word:focus-visible{transform:rotate(-3deg) scale(1.08);color:#f0356a;outline:none}
+.pick-word:active{transform:scale(.97)}
+.pick-o{color:#a47e8b;font-weight:500}
+.pick-q{color:#ff5f80;margin-left:-.25em}
+
+/* =====================================================================
+   DECK: smooth continuity between cards + working flip
+   ===================================================================== */
+/* The card that tumbled off the bottom slides back up from below the screen
+   as the last card of the deck; keep it from creating page scrollbars. */
+.app{overflow-y:clip}
+/* Tap-to-flip in Reseña (the class was being toggled but nothing styled it). */
+.deck-card.current{transform-style:preserve-3d}
+.deck-card.current.flipped{transform:translateX(-50%) rotate(var(--rot)) translateY(var(--y)) rotateY(180deg)}
+@keyframes tumbleAwayFlipped{
+  0%{transform:translateX(-50%) translateY(0) rotate(-1deg) rotateY(180deg)}
+  25%{transform:translateX(-50%) translateY(14px) rotate(9deg) rotateY(180deg)}
+  100%{transform:translateX(-50%) translateY(115vh) rotate(78deg) rotateY(180deg)}
+}
+.deck-card.current.flipped.tumble-out{animation-name:tumbleAwayFlipped}
+
+/* =====================================================================
+   MENSAJITOS: jumping envelope notification
+   ===================================================================== */
+.note-card{display:flex;flex-direction:column;align-items:center}
+.notify{
+  position:relative; border:0; background:none; padding:12px 14px 8px; cursor:pointer;
+  transform-origin:50% 90%; animation:notifyJump 2.6s ease-in-out infinite;
+  -webkit-tap-highlight-color:transparent;
+}
+.notify:hover{animation-duration:1.6s}
+@keyframes notifyJump{
+  0%,58%,100%{transform:translateY(0) rotate(0)}
+  6%{transform:translateY(-18px) rotate(0)}
+  12%{transform:translateY(0) rotate(0)}
+  18%{transform:translateY(-10px) rotate(0)}
+  24%{transform:translateY(0) rotate(0)}
+  28%{transform:rotate(-10deg)} 32%{transform:rotate(10deg)} 36%{transform:rotate(-9deg)}
+  40%{transform:rotate(9deg)} 44%{transform:rotate(-6deg)} 48%{transform:rotate(6deg)} 52%{transform:rotate(-3deg)}
+}
+.env-icon{display:block;width:100px;height:68px;position:relative}
+.env-static{position:absolute;left:0;top:0;width:200px;height:136px;transform:scale(.5);transform-origin:0 0;
+  filter:drop-shadow(0 6px 8px rgba(130,55,85,.28))}
+.env-static .env-back{z-index:1}
+.env-static .flap{z-index:4}
+.env-static .env-front{z-index:3}
+.badge{
+  position:absolute; top:0; right:2px; min-width:27px; height:27px; padding:0 7px; border-radius:14px;
+  background:#ff2d4d; color:#fff; font:800 1rem/27px "Baloo 2",system-ui,sans-serif; text-align:center;
+  border:2px solid #fff; box-shadow:0 3px 8px rgba(255,45,77,.45); z-index:6;
+  animation:badgePulse 1.3s ease-in-out infinite;
+}
+@keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+
+/* --- envelope drawing (200×136 units; shared by the icon and the big envelope) --- */
+.env-back{position:absolute;inset:0;border-radius:9px;background:linear-gradient(#e98fa9,#f39db4 60%,#f6a9bd)}
+.env-front{position:absolute;inset:0;filter:drop-shadow(0 0 .8px rgba(160,80,70,.6))}
+.env-front i{position:absolute;inset:0;display:block}
+.ef-l{background:linear-gradient(90deg,#fff7ec,#ffecd8);clip-path:polygon(0 0,50% 50%,0 100%)}
+.ef-r{background:linear-gradient(270deg,#fff3e4,#ffe6d0);clip-path:polygon(100% 0,50% 50%,100% 100%)}
+.ef-b{background:linear-gradient(#fffaf3,#ffefdc);clip-path:polygon(0 100%,50% 50%,100% 100%);border-radius:0 0 9px 9px}
+.flap{position:absolute;left:0;top:0;width:200px;height:68px;transform-origin:50% 0;transform-style:preserve-3d}
+.flap i{position:absolute;inset:0;display:block;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flap-f{background:linear-gradient(#fff8ee,#ffeedb);clip-path:polygon(0 0,100% 0,50% 100%)}
+.flap-b{background:#e5809f;clip-path:polygon(0 100%,100% 100%,50% 0);transform:rotateX(180deg)}
+.flap .seal{
+  inset:auto!important;left:50%!important;top:100%!important;right:auto!important;bottom:auto!important;width:28px;height:28px;margin:-20px 0 0 -14px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ff6f8b,#d81e45);color:#fff;font-style:normal;
+  font-size:15px;line-height:28px;text-align:center;box-shadow:0 2px 4px rgba(90,10,30,.4);
+  transform:translateZ(.5px);
+}
+
+/* =====================================================================
+   MENSAJITOS: the letter sequence
+   ===================================================================== */
+.letter-stage{position:fixed;inset:0;z-index:70;overflow:hidden;overflow:clip;pointer-events:none}
+/* same dim as the wrong-answer overlay in Examen */
+.letter-scrim{position:absolute;inset:0;background:rgba(255,140,156,.5);pointer-events:auto;animation:scrimIn .8s ease both}
+@keyframes scrimIn{from{opacity:0}to{opacity:1}}
+.letter-close{
+  position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);left:14px;z-index:9;pointer-events:auto;
+  border:0;border-radius:15px;background:rgba(255,255,255,.92);color:#d84f71;padding:9px 13px;
+  box-shadow:0 5px 14px rgba(130,55,85,.22);font-weight:800;
+}
+
+.env-part{
+  position:absolute;left:50%;top:50%;width:200px;height:136px;margin:-68px 0 0 -100px;
+  transform:translate(var(--sx),var(--sy)) scale(var(--s0));
+  animation:envFly var(--t-fly) cubic-bezier(.4,0,.2,1) forwards, envFall var(--t-settle) cubic-bezier(.5,0,.9,.6) var(--d-settle) forwards;
+  filter:drop-shadow(0 10px 14px rgba(120,40,70,.28));
+}
+@keyframes envFly{from{transform:translate(var(--sx),var(--sy)) scale(var(--s0))}to{transform:translate(0,0) scale(var(--es))}}
+@keyframes envFall{from{transform:translate(0,0) scale(var(--es)) rotate(0)}to{transform:translate(0,125vh) scale(var(--es)) rotate(9deg)}}
+.ep-back{z-index:1}
+.ep-front{z-index:3}
+.ep-flap{z-index:4;perspective:700px;perspective-origin:50% 0;
+  animation:envFly var(--t-fly) cubic-bezier(.4,0,.2,1) forwards, envFall var(--t-settle) cubic-bezier(.5,0,.9,.6) var(--d-settle) forwards, flapZ .01s linear var(--d-flapz) forwards}
+@keyframes flapZ{to{z-index:1}}
+.ep-flap .flap{animation:flapOpen var(--t-flap) cubic-bezier(.45,0,.3,1) var(--d-flap) forwards}
+@keyframes flapOpen{from{transform:rotateX(0)}to{transform:rotateX(180deg)}}
+
+/* the folded paper: hidden inside the envelope, slides out, then settles at reading size */
+.paper-wrap{
+  position:absolute;left:50%;top:50%;width:var(--pw);height:var(--ph);
+  margin-left:calc(var(--pw) / -2);margin-top:calc(var(--ph) / -2);z-index:2;
+  transform:translateY(0) scale(var(--sin));
+  animation:paperSlide var(--t-slide) cubic-bezier(.45,0,.3,1) var(--d-slide) forwards, paperSettle var(--t-settle) cubic-bezier(.4,0,.2,1) var(--d-settle) forwards, paperZ .01s linear var(--d-settle) forwards;
+  pointer-events:none;
+}
+.paper-wrap.ready{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
+@keyframes paperSlide{from{transform:translateY(0) scale(var(--sin))}to{transform:translateY(calc(var(--rise) * -1)) scale(var(--sin))}}
+@keyframes paperSettle{from{transform:translateY(calc(var(--rise) * -1)) scale(var(--sin))}to{transform:translateY(0) scale(1)}}
+@keyframes paperZ{to{z-index:5}}
+
+.paper-skin{
+  background:#fffaf0;
+  background-image:radial-gradient(rgba(150,120,80,.05) 1px,transparent 1.5px);background-size:5px 5px;
+  box-shadow:0 2px 3px rgba(90,60,40,.18),0 12px 22px rgba(90,40,60,.3);
+}
+.fold-shift{position:absolute;inset:0;transform:translateY(-25%);perspective:1700px;
+  transition:transform var(--t-unfold,2.6s) cubic-bezier(.45,0,.25,1)}
+.fold-shift.unfold{transform:translateY(0)}
+.paper-half{position:absolute;left:0;width:100%;height:50%}
+.paper-half.bottom{top:50%;overflow:hidden;border-radius:0 0 5px 5px}
+.paper-half.bottom .sheet-content{top:calc(var(--ph) / -2)}
+.paper-half.bottom::before{ /* crease shadow just under the fold */
+  content:"";position:absolute;left:0;right:0;top:0;height:14px;z-index:2;
+  background:linear-gradient(rgba(120,80,60,.16),transparent)}
+.paper-half.top{top:0;transform-origin:50% 100%;transform:rotateX(-180deg);transform-style:preserve-3d;
+  transition:transform var(--t-unfold,2.6s) cubic-bezier(.45,0,.25,1)}
+.paper-half.top.unfold{transform:rotateX(0)}
+.half-in,.half-out{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.half-in{overflow:hidden;border-radius:5px 5px 0 0}
+.half-in::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;background:linear-gradient(transparent,rgba(120,80,60,.14))}
+.half-out{transform:rotateX(180deg);border-radius:5px;
+  background-image:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,0) 22%),radial-gradient(rgba(150,120,80,.05) 1px,transparent 1.5px);
+  background-size:auto,5px 5px;
+  display:flex;align-items:center;justify-content:center}
+.paper-heart{font-style:normal;color:#ff9db6;font-size:2.2rem;opacity:.85}
+.paper-wrap.ready:not(.opened) .half-out{animation:paperGlow 1.9s ease-in-out infinite}
+@keyframes paperGlow{0%,100%{box-shadow:0 2px 3px rgba(90,60,40,.18),0 12px 22px rgba(90,40,60,.3)}
+  50%{box-shadow:0 2px 3px rgba(90,60,40,.18),0 12px 30px rgba(255,255,255,.95)}}
+
+.flipper{position:absolute;inset:0;perspective:1600px;visibility:hidden}
+.flipper.show{visibility:visible}
+.flip-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform var(--t-turn,.45s) cubic-bezier(.4,.1,.2,1)}
+.flip-inner.flipped{transform:rotateY(180deg)}
+.sheet{position:absolute;inset:0;border-radius:5px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.s-back{transform:rotateY(180deg)}
+.sheet::after{ /* faint leftover crease from being folded in half */
+  content:"";position:absolute;left:0;right:0;top:50%;height:16px;margin-top:-8px;pointer-events:none;
+  background:linear-gradient(transparent,rgba(120,80,60,.07) 48%,rgba(255,255,255,.5) 52%,transparent)}
+
+.sheet-content{
+  position:absolute;left:0;top:0;width:var(--pw);height:var(--ph);
+  padding:calc(var(--ph) * .06) calc(var(--pw) * .1) calc(var(--ph) * .035);
+  display:flex;flex-direction:column;
+  font-family:"Caveat","Segoe Script","Bradley Hand",cursive;color:#3a3a5c;
+}
+.ptext{flex:1 1 auto;min-height:0;overflow:hidden;font-size:var(--fs1);line-height:1.34;font-weight:500}
+.s-back .ptext{font-size:var(--fs2)}
+.ptext p{margin:0 0 .8em}
+.ptext .te-amo{font-weight:700;color:#ff4f79;font-size:1.25em;line-height:1.15;margin-top:1em;text-align:center}
+.turn-hint{flex:none;text-align:center;font-size:1.35rem;font-weight:700;color:#ff5f80;padding-top:6px}
+
+
+/* =====================================================================
+   HOME layout: options centered, scroll hint pinned toward the bottom
+   ===================================================================== */
+.hero{justify-content:space-between!important}
+.hero-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%}
+.scroll-hint{margin:0!important;padding:14px 12px calc(10px + env(safe-area-inset-bottom,0px))}
+.mistakes-link{
+  margin-top:14px;border:0;background:none;cursor:pointer;padding:2px 6px;
+  font-family:"Caveat","Segoe Script","Bradley Hand",cursive;font-size:clamp(1.7rem,6.5vw,2.3rem);font-weight:700;
+  color:#b06a86;text-decoration:underline wavy #f3c1d1;text-decoration-thickness:2px;text-underline-offset:.16em;
+  transition:transform .2s,color .2s;
+}
+.mistakes-link:hover,.mistakes-link:focus-visible{transform:rotate(-2deg) scale(1.06);color:#e0457a;outline:none}
+
+/* =====================================================================
+   REVIEW: solid card (Spanish + English together), no turning
+   ===================================================================== */
+.deck-card .mini-inner{background-color:#fff!important}
+/* growing card on a mistake (this rule used to lose to .deck-card's transform) */
+.deck-card.current.wrong-state{transform:translateX(-50%) rotate(var(--rot)) translateY(var(--y)) scale(1.12)}
+.deck-card.current.flipped.wrong-state{transform:translateX(-50%) rotate(var(--rot)) translateY(var(--y)) scale(1.12) rotateY(180deg)}
+
+/* =====================================================================
+   MISTAKES page
+   ===================================================================== */
+.mistakes-screen{padding-bottom:40px}
+.mistake-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;padding:6px 14px 20px;max-width:900px;margin:0 auto}
+.mistake-card{background:#fff;border:4px solid #ffc0d0;border-radius:22px;padding:12px;text-align:center;box-shadow:0 8px 18px rgba(200,80,120,.14)}
+.mistake-card img{width:100%;max-height:150px;object-fit:contain;border-radius:12px}
+.mk-chose,.mk-right{font-size:.92rem;margin-top:8px;line-height:1.25}
+.mk-chose span,.mk-right span{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#a58a97}
+.mk-chose s{color:#e0455f;text-decoration-thickness:2px}
+.mk-right strong{color:#2f9b62}
+.mk-en{margin-top:4px;color:#8a7480;font-size:.88rem}
+.mistake-empty{position:relative;text-align:center;padding:12vh 24px 0}
+.picudo{font-family:"Luckiest Guy","Baloo 2",sans-serif;font-size:clamp(2.8rem,14vw,4.6rem);color:#ff6f91;text-shadow:3px 4px 0 #ffd0dc;line-height:1.05}
+.mistake-empty p{margin:14px auto 0;max-width:22rem;font-size:1.2rem;color:#6d5460}
+
+
+/* =====================================================================
+   REVIEW → EXAMEN pop-up
+   ===================================================================== */
+.ready-box{text-align:center;max-width:420px}
+.ready-box h2{font-size:1.7rem;margin:6px 0 4px}
+.ready-box .modal-actions{justify-content:center;gap:14px;margin-top:20px}
+.ready-box .modal-actions button{min-width:120px;font-size:1.1rem}
+.ready-modal{z-index:95}
+
+/* =====================================================================
+   EXAMEN / CHALLENGE intro (FNF-style countdown)
+   ===================================================================== */
+.intro-scrim{position:fixed;inset:0;z-index:90;background:rgba(255,140,156,.5);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;animation:scrimIn .5s ease both}
+.intro-scrim.out{animation:scrimOut .45s ease forwards;pointer-events:none}
+@keyframes scrimOut{to{opacity:0}}
+.fnf-word{
+  position:relative;font-family:"Luckiest Guy","Baloo 2",cursive;text-transform:uppercase;letter-spacing:.02em;line-height:1;
+  font-size:clamp(2rem,10.4vw,5.6rem);text-align:center;padding:0 10px;white-space:nowrap;
+  animation:fnfPop .9s cubic-bezier(.2,1.4,.4,1) both;
+}
+.fnf-word b{display:block;font-weight:400}
+/* thick black comic outline on a copy of the text BEHIND the colored fill */
+.fnf-word .fo{position:absolute;left:0;right:0;top:0;-webkit-text-stroke:.2em #141414;color:#141414;text-shadow:.05em .09em 0 #141414}
+.fnf-word .ff{position:relative;-webkit-background-clip:text;background-clip:text;color:transparent}
+.fnf-word.ready{transform:rotate(-4deg)}
+.fnf-word.ready .ff{background-image:linear-gradient(90deg,#ff1f1f 0%,#ff2a1a 55%,#ff9a00 100%)}
+.fnf-word.set{transform:rotate(2deg)}
+.fnf-word.set .ff{background-image:linear-gradient(90deg,#fff07a 0%,#ffe13a 50%,#ffb800 100%)}
+.fnf-word.go{font-size:clamp(4rem,22vw,10rem);transform:rotate(-3deg)}
+.fnf-word.go .ff{background-image:linear-gradient(180deg,#3dff3d,#0fd10f)}
+@keyframes fnfPop{
+  0%{opacity:0;scale:.2;translate:0 30px}
+  55%{opacity:1;scale:1.16;translate:0 -6px}
+  75%{scale:.96}
+  100%{opacity:1;scale:1;translate:0 0}
+}
+.fnf-banner{position:fixed;left:0;right:0;top:32%;z-index:96;pointer-events:none;animation:fnfPop .8s cubic-bezier(.2,1.4,.4,1) both,bannerOut .5s ease 1.4s forwards}
+@keyframes bannerOut{to{opacity:0;translate:0 -20px}}
+
+/* big Dudu drives right → left across the screen */
+.intro-scrim .big-car{position:absolute;left:0;top:50%;width:min(88vw,470px);height:auto;margin-top:calc(min(88vw,470px) * -.43);
+  animation:bigCarDrive 2.45s linear forwards;filter:drop-shadow(0 12px 10px rgba(80,30,50,.3))}
+@keyframes bigCarDrive{
+  0%{transform:translateX(112vw) translateY(0)}
+  25%{transform:translateX(78vw) translateY(-8px)}
+  50%{transform:translateX(44vw) translateY(4px)}
+  75%{transform:translateX(8vw) translateY(-6px)}
+  100%{transform:translateX(-120%) translateY(0)}
+}
+/* small Dudu: hidden until his drive-in, then mirrored (facing right) from the top-left, turning to his normal pose when parked */
+.mascot-gif.deck-car.car-hidden{visibility:hidden}
+.mascot-gif.deck-car.car-enter{animation:carEnter 2.2s cubic-bezier(.3,.55,.4,1) both}
+@keyframes carEnter{
+  0%{transform:translateX(calc(-50% - 70vw)) scaleX(-1)}
+  88%{transform:translateX(-50%) scaleX(-1)}
+  100%{transform:translateX(-50%) scaleX(1)}
+}
+
+/* =====================================================================
+   CHALLENGE MODE
+   ===================================================================== */
+body.challenge{
+  background-color:#fff3ee;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='220'%20height='220'%20viewBox='0%200%20220%20220'%3E%3Cdefs%3E%3Cg%20id='f'%3E%3Cpath%20d='M0%20-22%20C7%20-11%2016%20-6%2014%207%20C13%2016%206%2021%200%2021%20C-6%2021%20-13%2016%20-14%207%20C-16%20-3%20-6%20-9%200%20-22Z'%20fill='%23ff5a1f'/%3E%3Cpath%20d='M0%20-8%20C4%20-2%208%201%207%208%20C6%2013%203%2015%200%2015%20C-3%2015%20-6%2013%20-7%208%20C-8%202%20-3%20-2%200%20-8Z'%20fill='%23ffc933'/%3E%3C/g%3E%3C/defs%3E%3Cuse%20href='%23f'%20x='110'%20y='48'/%3E%3Cuse%20href='%23f'%20x='0'%20y='158'/%3E%3Cuse%20href='%23f'%20x='220'%20y='158'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(6.3,8.4) scale(0.4)'/%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(51.3,53.4) scale(0.4)'/%3E%3C/svg%3E");
+  background-size:220px 220px,110px 110px;
+}
+.chal-timer{
+  position:absolute;z-index:12;left:50%;top:-34px;transform:translateX(-50%);
+  background:#171012;border:3px solid #4a3038;border-radius:16px;padding:5px 20px 4px;
+  box-shadow:0 6px 14px rgba(70,20,30,.35),inset 0 0 12px rgba(0,0,0,.6);
+}
+.chal-timer span{font-family:"Orbitron","Share Tech Mono","Courier New",monospace;font-weight:900;font-size:2.1rem;letter-spacing:.06em;
+  color:#5dff8a;text-shadow:0 0 8px rgba(93,255,138,.75);font-variant-numeric:tabular-nums}
+.chal-timer.red{border-color:#ff2d2d;animation:timerPulse .5s ease-in-out infinite}
+.chal-timer.red span{color:#ff2d2d;text-shadow:0 0 10px rgba(255,45,45,.9)}
+@keyframes timerPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.08)}}
+
+.challenge-btn{
+  margin-top:16px;border:0;border-radius:20px;padding:11px 24px;cursor:pointer;
+  font-family:"Luckiest Guy","Baloo 2",cursive;font-size:1.45rem;letter-spacing:.03em;color:#fff;
+  background:linear-gradient(180deg,#ff8a1f,#ff2d1f 60%,#b30000);
+  box-shadow:0 6px 0 #7a0a0a,0 10px 22px rgba(255,60,20,.45);text-shadow:0 2px 0 rgba(90,0,0,.55);
+  animation:fireGlow 1.6s ease-in-out infinite;transition:transform .15s;
+}
+.challenge-btn:hover{transform:scale(1.06) rotate(-1deg)}
+.challenge-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #7a0a0a}
+@keyframes fireGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25) saturate(1.2)}}
+
+/* hell intro: screen turns red, fire everywhere, exploding "Challenge Mode" */
+.intro-scrim.hell{background:radial-gradient(circle at 50% 60%,#b00000 0%,#5a0000 70%,#2a0000 100%);animation:hellShake .12s linear infinite}
+@keyframes hellShake{0%{transform:translate(0,0)}25%{transform:translate(-5px,4px)}50%{transform:translate(4px,-4px)}75%{transform:translate(-3px,-5px)}100%{transform:translate(0,0)}}
+.hell-canvas{position:absolute;inset:0;width:100%;height:100%}
+.hell-flash{position:absolute;inset:0;background:#fff;opacity:0;animation:hellFlash 1s ease-out .35s both}
+@keyframes hellFlash{0%{opacity:.95}100%{opacity:0}}
+.hell-ring{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border:10px solid #ffd54a;border-radius:50%;opacity:0;animation:hellRing 1.3s ease-out .35s both}
+.hell-ring.r2{border-color:#ff5a1f;animation-delay:.55s}
+@keyframes hellRing{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(28)}}
+.hell-text{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;animation:hellText 3.4s cubic-bezier(.2,1.5,.4,1) both}
+.hell-text span{font-family:"Luckiest Guy","Baloo 2",cursive;font-size:clamp(2.4rem,12.5vw,7rem);line-height:.95;letter-spacing:.02em;
+  background:linear-gradient(180deg,#fff7b0 0%,#ffd21f 30%,#ff7a00 62%,#e01a00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  -webkit-text-stroke:.05em #3a0000;paint-order:stroke fill;
+  filter:drop-shadow(0 0 14px #ff5a00) drop-shadow(0 0 34px #ff2a00);animation:hellFlicker .18s steps(2) infinite}
+@keyframes hellFlicker{0%{filter:drop-shadow(0 0 12px #ff5a00) drop-shadow(0 0 30px #ff2a00) brightness(1)}100%{filter:drop-shadow(0 0 20px #ffb000) drop-shadow(0 0 46px #ff2a00) brightness(1.18)}}
+@keyframes hellText{0%{scale:.1;opacity:0}12%{scale:1.45;opacity:1}22%{scale:.92}32%{scale:1.05}45%{scale:1}92%{scale:1.04;opacity:1}100%{scale:1.2;opacity:0}}
+.hell-emoji{position:absolute;left:50%;top:50%;font-size:9rem;translate:-50% -50%;opacity:0;animation:hellBoom 1.1s ease-out .3s both}
+@keyframes hellBoom{0%{opacity:1;scale:.2}60%{opacity:1;scale:2.6}100%{opacity:0;scale:4}}
+
+/* challenge results pop-up */
+.chal-modal{z-index:95}
+.chal-box{text-align:center;max-width:430px}
+.chal-box h2{font-family:"Luckiest Guy","Baloo 2",cursive;font-size:2rem;letter-spacing:.02em;margin:4px 0 8px}
+.chal-score{font-size:1.4rem;color:#6d5460}
+.chal-score strong{font-family:"Orbitron",monospace;font-size:3rem;color:#e0455f}
+.chal-score span{display:block;font-size:1.05rem;margin-top:2px;color:#a58a97}
+.chal-detail{margin:6px 0 2px;color:#a58a97;font-size:.95rem}
+.chal-msg{font-size:1.15rem;line-height:1.35;margin:10px 4px 0}
+.chal-box .modal-actions{justify-content:center;gap:12px}
+.chal-box.perfect{background:linear-gradient(#fffbe8,#fff);border:4px solid #ffd54a}
+.chal-box.perfect h2{color:#e59a00}
+.confetti-wrap{position:fixed;inset:0;z-index:99;pointer-events:none;overflow:hidden}
+.confetti-wrap i{position:absolute;top:-24px;border-radius:2px;animation:confettiFall linear forwards}
+@keyframes confettiFall{0%{translate:0 0;rotate:0deg}100%{translate:40px 112vh;rotate:720deg}}
+
+/* =====================================================================
+   RESULT PAGES: score line, locked envelope
+   ===================================================================== */
+.score-line{font-family:"Baloo 2",sans-serif;font-weight:800;font-size:1.2rem;color:#e0455f;margin:-2px 0 2px}
+.notify.locked{animation:none;cursor:pointer}
+.notify.locked .env-static{filter:grayscale(.55) drop-shadow(0 6px 8px rgba(130,55,85,.22));opacity:.9}
+.notify.locked.shake{animation:lockShake .5s ease}
+@keyframes lockShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px) rotate(-4deg)}40%{transform:translateX(9px) rotate(4deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.padlock{position:absolute;left:50%;top:50%;translate:-50% -46%;z-index:6;filter:drop-shadow(0 2px 3px rgba(60,30,40,.4))}
+.lock-msg{min-height:1.4em;margin-top:2px;font-size:1rem;color:#8a5a6d;text-align:center}
+
+/* =====================================================================
+   DEVELOPER MODE toast + hint affordance
+   ===================================================================== */
+.scroll-hint{cursor:pointer;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.dev-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));translate:-50% 0;background:#2b2130;color:#fff;font-weight:700;font-size:.95rem;padding:10px 18px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:999;animation:devToastIn .25s ease}
+@keyframes devToastIn{from{opacity:0;translate:-50% 10px}to{opacity:1;translate:-50% 0}}
